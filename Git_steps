@@ -1,8 +1,13 @@
  cd /nfs/a59/eeagdl/GIT
 
+git config --global user.name 'adrianoglemos'
+git config --global user.email 'adrianoglemos@yahoo.com.br'
+
 git init
 
 git status
 
 git add "FILE"
+
+
 

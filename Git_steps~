@@ -1,0 +1,8 @@
+ cd /nfs/a59/eeagdl/GIT
+
+git init
+
+git status
+
+git add "FILE"
+
