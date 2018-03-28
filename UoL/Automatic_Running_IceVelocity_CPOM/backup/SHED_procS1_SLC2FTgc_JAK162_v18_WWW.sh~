@@ -1,0 +1,405 @@
+#!/bin/csh
+
+unset noclobber
+
+#********************************************************************
+#********************************************************************
+# CPOM S1 IV WWW - JAK version
+#********************************************************************
+#********************************************************************
+# Script to automate the production of FT products over a given area
+# Based on Anna Hogg's SHED files
+# The automation cab be improved in the future by using a DB to search for
+# new products and to record details of the processing of the FT products
+#********************************************************************
+
+# Set script version number
+set sh_ver = 21
+set run_ver = 29
+
+set AOI = JAK
+
+# Set script name
+set SHF = procS1_SLC2FTgc_v${sh_ver}_cwT21_www
+# Set processing type e.g. FT, Int
+set proc_type = FT
+
+# Set the variables needed to search for new files
+# Do not pass S1* as S1_no!  It gets expanded when being passed to the
+# processing script and screws everything up
+set S1_no = S1
+set S1_Imode = IW
+set S1_Ifmt = SLC
+set pol = hh
+
+# Set the track no
+# PIG
+ set Trk_no = 162
+# GVI
+#set Trk_no = 162
+# set Trk_no = 124
+
+# Automate the selection of particular latlons?  Also if you feel too lazy to use the interactive prompt.
+# 1 is yes, anything else is manual selection and ignores the values in presetaoi
+set llautomate = 1
+# Set the areas as a list, for example: (lat1,lon1 lat2,lon2 lat3,lon3)
+# PIG
+# set presetaoi = (-075,-099) 
+# GVI track 66 and 124
+#set presetaoi = (-074,-076 -073,-071 -071,-067 -070,-064 -073,-073 -072,-069 -071,-066 -070,-062)
+#set presetaoi = (-075,-073 -074,-067 -073,-063 -071,-059 -075,-073 -074,-069 -073,-064 -072,-060)
+# Getz
+#set presetaoi = (-073,-119 -074,-124 -075,-129 -076,-001 -076,-134 -076,-140 -077,-147 -077,-154)
+# JI
+ set presetaoi = (0069,-050 0068,-050)
+set aoistr = (0069_-050 0068_-050)
+#set presetaoi = (0068,-050) 
+
+# Set paths
+set scriptPath = /nfs/a41/earelh/working/
+set archivePath = /nfs/a41/L0data/S1/
+set outputPath = /nfs/a41/S1_CPOM_www/IV_out/${AOI}/WWW/
+set WWWpath = /nfs/a41/S1_CPOM_www/IV_out/${AOI}/WWW/online_v${run_ver}/
+ # set orbit directory
+ set Orbit_dir_a =  /nfs/a147/raw/orbits/S1A/POEORB/
+ set Orbit_dir_b =  /nfs/a147/raw/orbits/S1B/POEORB/
+# Make output if it doesn't exist
+mkdir -p $outputPath
+
+# Set the processing variables
+set rng_lks = 10
+set azi_lks = 2
+set rng_win = 256
+set azi_win = 64
+set no_ovr = 1
+set nr = 64
+set naz = 64
+set thres = 5.0
+set thres2 = 0.05
+set npoly = 3
+set ras_rng_mli = 4
+set ras_azi_mli = 4 
+set col_ramp = 10.
+
+  # Initial Tracking Step
+  set Rstep = 80
+  set Astep = 16
+  set off_Rwin2 = 350
+  set off_Awin2 = 75
+  # Adaptive tracking step
+  set Rstep_adap = 80
+  set Astep_adap = 16
+  set off_Rwin2_adap = 350
+  set off_Awin2_adap = 75
+  # Offset tracking thresholds
+  set off_thres_init = 0.00
+  set off_thres = 0.05
+
+set disp_mode = 2
+set poly_flag = 1
+# DEM
+# set DEM = /nfs/a41/DEMs/Antarctica/nsidc0422_antarctic_1km_dem/krigged_dem_nsidc_bin_swap
+set DEM_path = /nfs/a41/DEMs/Greenland/
+set DEM = gimpdem_90m
+# Greenland DEM
+#set DEM = TBC
+  set temp_B = 12 
+# GVI
+#  set max_yr_IV = 6000.0
+# PIG
+#set max_yr_IV = 5000.0
+# JI
+set max_yr_IV = 20000.0
+set DEM_ovr = 1
+set col_ramp_THUMB = 10000.
+set THUMB_lk = 4
+set DEM_ovr_Fi = 4
+
+set col_ramp2 = 100.
+set col_ramp_YR = 1000.
+
+# Set parameters for filtering
+set fmax = 0.3
+set win = 10
+
+# Set params for fine geocoded mli (the other uses the same looks as the output)
+set real_rlk_fine = 10
+set real_azlk_fine = 2
+
+ # set hatton plot variables
+ set max_TcmG_IV = 4500
+ set max_TcmG_SNR = 1
+ # set min IV colour scale, note for rig_rev.py version absolute 0 must NOT be used
+ set min_TcmG_IV = 0
+ set min_TcmG_SNR = 0
+ set mli_alpha = 0.8
+ set CB_transp = 1
+ set IV_alpha = 0.4
+ set PL_scl = 0.35
+
+# gnuplot settings - don't think it's used now, if adding add to proc too.
+#set yax_max = 17000
+   
+# Find the lat lon pairs in the track folder 
+set latlons = ( `ls ${archivePath}/${Trk_no} | awk -F "[_.]" 'BEGIN {OFS="," ;} {print $9, $11}' | sort | uniq` )
+set lenll = $#latlons
+echo
+echo "$lenll unique lat long pairs were found in the track archive:"
+@ i = 1
+while ( $i <= $lenll )
+    echo "$i) $latlons[$i]"
+    @ i++
+end
+
+@ i = 1
+set aoi = 
+
+# Override in case of automation 
+if ( $llautomate == 1 ) then
+    echo
+    echo "AUTOMATED PRESETS SELECTED"
+    set aoi = ($aoi $presetaoi)
+else
+    # Ask user to select which ones they want
+    echo
+    echo "Please enter the index numbers for the lat lons of interest, separated by SPACES, e.g. 1 2 5 8 14, hit return to select all:"
+    set interest = ( $< ) 
+    if ( $#interest == 0 ) then
+	echo "All areas selected."
+	set aoi = ($latlons)
+    else 
+	echo
+	echo "The following areas were chosen:"
+	while  ( $i <= $#interest )
+	    echo "$interest[$i]"
+	    set aoi = ($aoi $latlons[$interest[$i]])
+	    @ i++
+	end
+    endif
+endif
+@ i = 1
+echo 
+echo "These lat lons will be selected for processing: "
+while ( $i <= $#aoi )
+    echo $aoi[$i]
+    @ i++
+end
+
+#  Now need to descend into per lat lon processing
+@ i = 1
+
+while ( $i <= $#aoi )
+
+    set P_lat = `echo $aoi[$i] | awk -F "[,]" '{print $1}'`
+    set P_lon = `echo $aoi[$i] | awk -F "[,]" '{print $2}'`
+
+    # Make the master directory:
+    set mdir_tr = T${Trk_no}_${P_lat}_${P_lon}
+    set mdir_ver = ${proc_type}_v${run_ver}
+    set mdir1 = ${mdir_tr}/${mdir_ver}
+    cd $outputPath
+    mkdir -p $mdir1
+    cd $scriptPath
+   
+    # Prepare a file for the list of archived files for this lat lon
+    set arch_files_list = ${outputPath}/${mdir1}/.arch_list_${mdir_tr}_${mdir_ver}.txt
+    rm -f $arch_files_list
+
+    #ls ${archivePath}/${Trk_no} | awk -F "[_.]" -v outf=$arch_files_list -v plat=$P_lat -v plon=$P_lon '{ if (($3 == "SLC") && ($9 == plat) && ($11 == plon)) printf "%s\n", $0 > outf}'
+    ls ${archivePath}/${Trk_no} | awk -F "[_.]" -v plat=$P_lat -v plon=$P_lon '{ if (($3 == "SLC") && ($9 == plat) && ($11 == plon)) printf "%s\n", $0}' | sort -k7,7g -t "_" > $arch_files_list
+
+    set IM_arr = 
+    # Read the file and allocate image IDs
+    foreach line (`cat $arch_files_list`)
+	set arr_elem = `echo $line | awk -F '_' '{printf "20%s\n", $7}'`
+	set IM_arr = ($IM_arr $arr_elem)
+    end
+
+    echo "    Processing area $P_lat $P_lon"
+
+    # Now we have the IM IDs, we run through the pairs
+    @ j = 2
+    while ( $j <= $#IM_arr)
+	set minus1 = `echo $j | awk '{print $1-1}'`
+	set im1 = `echo $IM_arr[$minus1] | cut -c 3-8`
+	set im2 = `echo $IM_arr[$j] | cut -c 3-8`
+	set P = `echo $im1 $im2 | awk '{print $1"_"$2}'`
+	echo "Pair $P Images $im1 $im2 Indeces $minus1 $j"
+	# As this is automated, we check for the existence of the directory before creating it and processing.
+	if (! -d ${outputPath}/${mdir1}/$P) then
+	    echo "Processing new pair $P"
+	    mkdir -p ${outputPath}/${mdir1}/$P
+
+	    # Now we need to process the info
+	    set IMa = $IM_arr[$minus1]
+	    set IMb = $IM_arr[$j]
+	    set lata = $P_lat
+	    set lona = $P_lon
+	    set latb = $P_lat
+	    set lonb = $P_lon
+	    echo "    Pair $P"
+	    cp ${scriptPath}/${SHF}.sh ${outputPath}/${mdir1}/$P/
+	    ln -s ${DEM_path}$DEM.dem ${outputPath}/${mdir1}/$P/$DEM.dem
+	    cp ${DEM_path}$DEM.dem_par ${outputPath}/${mdir1}/$P/
+	    cd ${outputPath}/${mdir1}/$P
+
+	    # Calculate the temporal baseline between the pairs
+	    set d1 = `date -d $IMa +%s`
+	    set d2 = `date -d $IMb +%s`
+	    set temp_B = `echo $d1 $d2 86400 | awk '{printf "%.0f\n", ($2-$1)/$3}'`
+	    echo $temp_B
+
+	    # Running the shell script.  If commenting the call to the shell script, for testing direcotries creation, etc, also comment the "if" loop out up to the marked point!
+	    echo "./${SHF}.sh ${IMa} ${IMb} ${S1_no} ${S1_Imode} ${S1_Ifmt} ${lata} ${lona} ${latb} ${lonb} ${pol} ${rng_lks} ${azi_lks} ${rng_win} ${azi_win} ${no_ovr} ${nr} ${naz} ${thres} ${thres2} ${npoly} ${ras_rng_mli} ${ras_azi_mli} ${Trk_no} ${col_ramp} ${Rstep} ${Astep} ${off_Rwin2} ${off_Awin2} ${disp_mode} ${poly_flag} ${DEM} ${temp_B} ${max_yr_IV} ${DEM_ovr} ${AOI} ${col_ramp_THUMB} ${THUMB_lk} ${DEM_ovr_Fi} ${Rstep_adap} ${Astep_adap} ${off_Rwin2_adap} ${off_Awin2_adap} ${DEM_path} ${Orbit_dir_a} ${Orbit_dir_b} ${off_thres_init} ${off_thres} ${col_ramp2} ${fmax} ${win} ${real_rlk_fine} ${real_azlk_fine} ${max_TcmG_IV} ${max_TcmG_SNR} ${min_TcmG_IV} ${min_TcmG_SNR} ${mli_alpha} ${CB_transp} ${IV_alpha} ${PL_scl} ${col_ramp_YR} ${WWWpath}"
+	    ./${SHF}.sh ${IMa} ${IMb} ${S1_no} ${S1_Imode} ${S1_Ifmt} ${lata} ${lona} ${latb} ${lonb} ${pol} ${rng_lks} ${azi_lks} ${rng_win} ${azi_win} ${no_ovr} ${nr} ${naz} ${thres} ${thres2} ${npoly} ${ras_rng_mli} ${ras_azi_mli} ${Trk_no} ${col_ramp} ${Rstep} ${Astep} ${off_Rwin2} ${off_Awin2} ${disp_mode} ${poly_flag} ${DEM} ${temp_B} ${max_yr_IV} ${DEM_ovr} ${AOI} ${col_ramp_THUMB} ${THUMB_lk} ${DEM_ovr_Fi} ${Rstep_adap} ${Astep_adap} ${off_Rwin2_adap} ${off_Awin2_adap} ${DEM_path} ${Orbit_dir_a} ${Orbit_dir_b} ${off_thres_init} ${off_thres} ${col_ramp2} ${fmax} ${win} ${real_rlk_fine} ${real_azlk_fine} ${max_TcmG_IV} ${max_TcmG_SNR} ${min_TcmG_IV} ${min_TcmG_SNR} ${mli_alpha} ${CB_transp} ${IV_alpha} ${PL_scl} ${col_ramp_YR} ${WWWpath} > ${P}_SO.txt
+	    if ( $status != 0 ) then
+		echo "ERROR in ${SHF}.sh for pair $P"
+	    endif
+	    # Down the here.
+	else
+	    # As the folder does exist, check it isn't a known QC failure, then look to see if the files are POEPOE.
+	    # If yes, do nothing, if no, check for new orbit file and reprocess 
+	    # if available
+	    echo "Pair $P has been processed before.  Checking QC status"
+	    set failure=`grep $P ${outputPath}/${mdir1}/qc_fails.txt | wc -l`
+	    if ($failure == 0) then
+		echo "Pair with good QC. Checking orbits."
+		cd ${outputPath}/${mdir1}/$P
+		set numpoe = `ls | grep POEPOE | wc -l`
+		if ($numpoe == 0) then
+		    # First we need to loook in the log file to find out which satellite the images are from
+		    set platfs = `grep Archive ${P}_SO.txt | sort | uniq | awk -F '_' '{print $1}' | awk '{print $2}'`
+		    set platfa = $platfs[1]
+		    set platfb = $platfs[2]
+		    echo "Scene 1 Platform: $platfa"
+		    echo "Scene 2 Platform: $platfb"		    
+		    # Get the date information
+		    set IMa = $IM_arr[$minus1]
+		    set IMb = $IM_arr[$j]
+		    set sa = `echo $IMa | cut -c3- `
+		    set sb = `echo $IMb | cut -c3- `
+		    # What have we got so far?
+		    set orbs = `ls ${sa}_${sb}.mag_DuFil_yrF.IV_*_gcpex | awk -F '_' '{print $5}'`
+		    set orb1 = `echo $orbs | cut -c1-3 `
+		    set orb2 = `echo $orbs | cut -c4- `
+		    # Work out orb dates - 1 day before
+		    set scene1 = $IMa
+		    set scene2 = $IMb
+		    set sc1_orb_date_temp = `date -d ${scene1} +%s`
+		    set sc1_orb_date_temp = `echo ${sc1_orb_date_temp}-86400 | bc -l`
+		    set sc1_orb_date_temp =  `date -d @${sc1_orb_date_temp} +'%F'`
+		    set sc1_orb_date = `echo ${sc1_orb_date_temp} | tr -d '-'`
+		    set sc2_orb_date_temp = `date -d ${scene2} +%s`
+		    set sc2_orb_date_temp = `echo ${sc2_orb_date_temp}-86400 | bc -l`
+		    set sc2_orb_date_temp =  `date -d @${sc2_orb_date_temp} +'%F'`
+		    set sc2_orb_date = `echo ${sc2_orb_date_temp} | tr -d '-'`
+ 
+		    # set variable to say if precise orbits file existed
+		    set sc1_OrbF = POE
+		    set sc2_OrbF = POE
+		    echo "Old: $orb1  Compare with: ${sc1_OrbF}"
+		    echo "Old: $orb2  Compare with: ${sc2_OrbF}"
+		    # sc1
+		    # First select the right orbit directory
+		    if ( $platfa == 'S1A' ) then
+			set Orbit_dir = $Orbit_dir_a
+		    else if ( $platfa == 'S1B' ) then
+			set Orbit_dir = $Orbit_dir_b
+		    endif
+		    set nonomatch
+		    if ( ! -e ${Orbit_dir}S1A_OPER_AUX_POEORB_OPOD_********T******_V${sc1_orb_date}T******_********T******.EOF ) then
+			echo "No orbit file found for ${sc1_orb_date}.  Using STD information"
+			set sc1_OrbF = STD
+		    endif
+		    # sc2
+		    # First select the right orbit directory
+		    if ( $platfb == 'S1A' ) then
+			set Orbit_dir = $Orbit_dir_a
+		    else if ( $platfb == 'S1B' ) then
+			set Orbit_dir = $Orbit_dir_b
+		    endif
+		    if ( ! -e ${Orbit_dir}S1A_OPER_AUX_POEORB_OPOD_********T******_V${sc2_orb_date}T******_********T******.EOF ) then
+			echo "No orbit file found for ${sc2_orb_date}.  Using STD information"
+			set sc2_OrbF = STD
+		    endif
+		    echo "Old: $orb1  New: ${sc1_OrbF}"
+		    echo "Old: $orb2  New: ${sc2_OrbF}"
+		    if ( ($orb1 != $sc1_OrbF) || ($orb2 != $sc2_OrbF) ) then
+			# A change has occured so rename old folder and reprocess
+			echo "New orbits found for $P.  Reprocessing."
+			cp -frp ${outputPath}/${mdir1}/${P} ${outputPath}/${mdir1}/${P}_$orbs
+			rm -rf ${outputPath}/${mdir1}/$P
+			mkdir -p ${outputPath}/${mdir1}/$P
+			#mv ${outputPath}/${mdir1}/$P ${outputPath}/${mdir1}/${P}_$orbs
+			#mkdir -p ${outputPath}/${mdir1}/$P
+
+			# Now we need to process the info
+			set lata = $P_lat
+			set lona = $P_lon
+			set latb = $P_lat
+			set lonb = $P_lon
+			echo "    Pair $P"
+			cp ${scriptPath}/${SHF}.sh ${outputPath}/${mdir1}/$P/
+			ln -s ${DEM_path}$DEM.dem ${outputPath}/${mdir1}/$P/$DEM.dem
+			cp ${DEM_path}$DEM.dem_par ${outputPath}/${mdir1}/$P/
+			cd ${outputPath}/${mdir1}/$P
+
+			# Calculate the temporal baseline between the pairs
+			set d1 = `date -d $IMa +%s`
+			set d2 = `date -d $IMb +%s`
+			set temp_B = `echo $d1 $d2 86400 | awk '{printf "%.0f\n", ($2-$1)/$3}'`
+			echo $temp_B
+
+			# Running the shell script.  If commenting the call to the shell script, for testing direcotries creation, etc, also comment the "if" loop out up to the marked point!
+			./${SHF}.sh ${IMa} ${IMb} ${S1_no} ${S1_Imode} ${S1_Ifmt} ${lata} ${lona} ${latb} ${lonb} ${pol} ${rng_lks} ${azi_lks} ${rng_win} ${azi_win} ${no_ovr} ${nr} ${naz} ${thres} ${thres2} ${npoly} ${ras_rng_mli} ${ras_azi_mli} ${Trk_no} ${col_ramp} ${Rstep} ${Astep} ${off_Rwin2} ${off_Awin2} ${disp_mode} ${poly_flag} ${DEM} ${temp_B} ${max_yr_IV} ${DEM_ovr} ${AOI} ${col_ramp_THUMB} ${THUMB_lk} ${DEM_ovr_Fi} ${Rstep_adap} ${Astep_adap} ${off_Rwin2_adap} ${off_Awin2_adap} ${DEM_path} ${Orbit_dir_a} ${Orbit_dir_b} ${off_thres_init} ${off_thres} ${col_ramp2} ${fmax} ${win} ${real_rlk_fine} ${real_azlk_fine} ${max_TcmG_IV} ${max_TcmG_SNR} ${min_TcmG_IV} ${min_TcmG_SNR} ${mli_alpha} ${CB_transp} ${IV_alpha} ${PL_scl} ${col_ramp_YR} ${WWWpath} > ${P}_SO.txt
+			if ( $status != 0 ) then
+			    echo "ERROR in ${SHF}.sh for pair $P"
+			endif
+			# Down the here.
+		    endif #Closes loop that compares the orbits previously used with the new ones
+		endif # Closes the loop that checks if the POEPOE files exist
+	    endif # Closes the loop which looks to see if this is a failure
+	endif
+	cd ${scriptPath}
+	@ j++
+    end # Finish processing the pairs
+
+    @ i++
+end # Finish processing the areas of interest
+
+# Finally need to produce the transects and move them to the correct location
+cd $scriptPath
+
+./plot_transects.py --title "Jakobshavn Isbrae Glacier: Along-Flow Ice Speed" --xlab "Distance (km)" --ylab "Ice Speed (m/day)" --ymax 16 --leg --leg_fs 16 --ax_fs 16 --gl_min 0 --gl_max 10 --p_vers v${sh_ver} '*mag_DuFil_yrF.IV_*_gcpex' $outputPath/T${Trk_no}_${aoistr[1]}/${mdir_ver} $outputPath/T${Trk_no}_${aoistr[2]}/${mdir_ver} 
+
+./plot_transects.py --title "Jakobshavn Isbrae Glacier: Across-Flow Ice Speed" --xlab "Distance (km)" --ylab "Ice Speed (m/day)" --ymax 8 --leg --leg_fs 16 --ax_fs 16 --p_vers v${sh_ver} '*mag_DuFil_yrF.IV_*_gcp_gateex' $outputPath/T${Trk_no}_${aoistr[1]}/${mdir_ver} $outputPath/T${Trk_no}_${aoistr[2]}/${mdir_ver} 
+
+set curwd = "$outputPath/T${Trk_no}_${aoistr[1]}/${mdir_ver}"
+cd $curwd
+set to_move = ( `find $curwd -maxdepth 2 -name "${AOI}_${Trk_no}_${aoistr[1]}_v${sh_ver}_*_IVsDist_n.mag_DuFil_dayF.IV_*_gcpex.png"` )
+set to_movea = ( `find $curwd -maxdepth 2 -name "${AOI}_${Trk_no}_${aoistr[1]}_v${sh_ver}_*_IVsDist_n.mag_DuFil_dayF.IV_*_gcp_gateex.png"` )
+set curwd = "$outputPath/T${Trk_no}_${aoistr[2]}/${mdir_ver}"
+#cd $curwd
+set to_move2 = ( `find $curwd -maxdepth 2 -name "${AOI}_${Trk_no}_${aoistr[2]}_v${sh_ver}_*_IVsDist_n.mag_DuFil_dayF.IV_*_gcpex.png"` )
+set to_move2a = ( `find $curwd -maxdepth 2 -name "${AOI}_${Trk_no}_${aoistr[2]}_v${sh_ver}_*_IVsDist_n.mag_DuFil_dayF.IV_*_gcp_gateex.png"` )
+#set move_all = ( `echo $to_move $to_movea $to_move2 $to_move2a` )
+#set curwd = "$outputPath/T${Trk_no}_${aoistr[3]}/${mdir_ver}"
+#cd $curwd
+#set to_move3 = ( `find $curwd -maxdepth 2 -name "${AOI}_${Trk_no}_${aoistr[3]}_v${sh_ver}_*_IVsDist_n.mag_DuFil_dayF.IV_*_gcpex.png"` )
+#set to_move3a = ( `find $curwd -maxdepth 2 -name "${AOI}_${Trk_no}_${aoistr[3]}_v${sh_ver}_*_IVsDist_n.mag_DuFil_dayF.IV_*_gcp_gateex.png"` )
+#set move_all = ( `echo $to_move $to_movea $to_move2 $to_move2a $to_move3 $to_move3a` )
+set move_all = ( `echo $to_move $to_movea $to_move2 $to_move2a` )
+
+cd $scriptPath
+foreach f ($move_all)
+    set subdir = `echo $f | awk -F '/' '{print $NF}' | grep -Eo '[0-9]{6}_[0-9]{6}'`
+    set reg = `echo $f | grep -Eo 'T[0-9_-]{13}'`
+    #cp $f $WWWpath
+    set oppath = $outputPath/${reg}/${mdir_ver}/${subdir}/output/
+    echo $oppath
+    mkdir -p $oppath
+    cp -u $f $oppath
+end
+
+
+exit
