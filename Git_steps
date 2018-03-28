@@ -1,0 +1,40 @@
+cd /nfs/a59/eeagdl/GIT
+
+git init
+
+git config --global user.name 'adrianoglemos'
+git config --global user.email 'adrianoglemos@yahoo.com.br'
+
+git status
+
+git add "FILE"
+
+########uploading to the github
+
+#atulaizar sem comentarios:
+git commit -m 'changes on 28_03_2018'
+
+#add a comment:
+
+git commit -a
+
+
+#upload:
+git remote add origin https://github.com/adrianoglemos/Rotinas.git
+git push -u origin master
+
+#after this just:
+git push
+
+#download from github
+git pull
+
+
+
+
+
+
+
+
+
+
