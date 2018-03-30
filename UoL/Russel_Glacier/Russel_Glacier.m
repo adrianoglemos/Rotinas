@@ -191,7 +191,7 @@ for i=1:size(list_opt,1)-1;
     cd(pathsate_opt)
     %path1=[pathsate_opt1 list_opt{i,1} '/'];
     %path2=[pathsate_opt2 list_opt{i,1} '/'];
-  eval(['!mkdir ./' date1 '_' date2]); 
+  eval(['!mkdir ./20' date1 '_20' date2]); 
 
   cd(['./' date1 '_' date2])
   
@@ -219,7 +219,7 @@ pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Gla
 
 d_opt=dir(pathsate_opt);
 j=1;
-for i=4:length(d_opt)-1;
+for i=4:length(d_opt)-5;
     name=d_opt(i,1).name;
     data{j,1}=cellstr(name);
     %date{j,1}=cellstr(name(18:25));
@@ -248,8 +248,8 @@ for i=1:size(list_opt,1);
 
     !cp ../S1_running_PIG.sh ./
     
-    eval(['!sed -i ''' '4s/20160427/' date1 '/' ''' S1_running_PIG.sh'])
-    eval(['!sed -i ''' '5s/20160825/' date2 '/' ''' S1_running_PIG.sh'])
+    eval(['!sed -i ''' '4s/20160427/20' date1 '/' ''' S1_running_PIG.sh'])
+    eval(['!sed -i ''' '5s/20160825/20' date2 '/' ''' S1_running_PIG.sh'])
 
     eval(['!sed -i ''' '9s/D642/' name1 '/' ''' S1_running_PIG.sh'])
     eval(['!sed -i ''' '10s/3B97/' name2 '/' ''' S1_running_PIG.sh'])
@@ -450,7 +450,7 @@ pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Gla
 
 d_opt=dir(pathsate_opt);
 j=1;
-for i=4:length(d_opt)-1;
+for i=4:length(d_opt)-2;
     name=d_opt(i,1).name;
     data{j,1}=cellstr(name);
     %date{j,1}=cellstr(name(18:25));
@@ -504,7 +504,7 @@ pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Gla
 
 d_opt=dir(pathsate_opt);
 j=1;
-for i=4:length(d_opt)-1;
+for i=4:length(d_opt)-2;
     name=d_opt(i,1).name;
     data{j,1}=cellstr(name);
     %date{j,1}=cellstr(name(18:25));
@@ -516,13 +516,13 @@ clear d_opt i j name
 
 
 j=3;
-for i=1:5:size(list_opt,1);
+for i=1:6:size(list_opt,1);
     path1=[pathsate_opt list_opt{i,1}];
     path2=[pathsate_opt list_opt{i+1,1}];
     path3=[pathsate_opt list_opt{i+2,1}];
     path4=[pathsate_opt list_opt{i+3,1}];
     path5=[pathsate_opt list_opt{i+4,1}];
-
+    path6=[pathsate_opt list_opt{i+5,1}];
     
     cd(pathsate_opt)
     
@@ -537,30 +537,34 @@ for i=1:5:size(list_opt,1);
      a3=list_opt{i+2,1};
      a4=list_opt{i+3,1};
      a5=list_opt{i+4,1};
-     
+     a6=list_opt{i+5,1};
+    
 %      date1=a(1:6);
 %      date2=a(8:end);
     
     %Tbaseline=num2str(datenum(date2,'yymmdd')-datenum(date1,'yymmdd'));
 
-    eval(['!cp ../Automatic_S1_im_run.sh ./Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
+    eval(['!cp ../Automatic_S1_im_run6.sh ./Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
     
-    eval(['!sed -i ''' '3s/year/2016/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
-    eval(['!sed -i ''' '3s/date1/' a1 '/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
+    eval(['!sed -i ''' '3s/year/2016/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '3s/date1/' a1 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
     
-    eval(['!sed -i ''' '20s/year/2016/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
-    eval(['!sed -i ''' '20s/date1/' a2 '/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
+    eval(['!sed -i ''' '20s/year/2016/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '20s/date1/' a2 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
     
-    eval(['!sed -i ''' '37s/year/2016/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
-    eval(['!sed -i ''' '37s/date1/' a3 '/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
+    eval(['!sed -i ''' '37s/year/2016/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '37s/date1/' a3 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
     
     
-    eval(['!sed -i ''' '54s/year/2016/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
-    eval(['!sed -i ''' '54s/date1/' a4 '/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
+    eval(['!sed -i ''' '54s/year/2016/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '54s/date1/' a4 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
         
-    eval(['!sed -i ''' '71s/year/2016/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
-    eval(['!sed -i ''' '71s/date1/' a5 '/' ''' Automatic_S1_im_run_' a1(1:6) '_' a5(8:end) '.sh']);
-    
+    eval(['!sed -i ''' '71s/year/2016/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '71s/date1/' a5 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+
+    eval(['!sed -i ''' '88s/year/2016/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '88s/date1/' a6 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+
 
 i
 end
@@ -681,7 +685,7 @@ pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Gla
 
 d_opt=dir(pathsate_opt);
 j=1;
-for i=4:length(d_opt)-3;
+for i=4:length(d_opt)-4;
     name=d_opt(i,1).name;
     data{j,1}=cellstr(name);
     %date{j,1}=cellstr(name(18:25));
@@ -720,6 +724,81 @@ for i=1:size(list_opt,1);
    
     %dest=[destination];    
     %eval(['!mkdir ' dest]);
+
+i
+end
+
+%%%%%%%%
+% Prepare a shell file to run
+%%%%%%%%
+
+clear all
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2016/'];
+
+d_opt=dir(pathsate_opt);
+j=1;
+for i=4:length(d_opt)-2;
+    name=d_opt(i,1).name;
+    data{j,1}=cellstr(name);
+    %date{j,1}=cellstr(name(18:25));
+    list_opt(j,1)=cellstr(data{j,1});
+    j=j+1;
+%folder=char(folder, data);
+end
+clear d_opt i j name
+
+
+j=3;
+for i=1:6:size(list_opt,1);
+%     path1=[pathsate_opt list_opt{i,1}];
+%     path2=[pathsate_opt list_opt{i+1,1}];
+%     path3=[pathsate_opt list_opt{i+2,1}];
+%     path4=[pathsate_opt list_opt{i+3,1}];
+%     path5=[pathsate_opt list_opt{i+4,1}];
+%     path6=[pathsate_opt list_opt{i+5,1}];
+%     
+    cd(pathsate_opt)
+    
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+%     d=dir(pwd);
+%     name1=d(j,1).name; name1=name1(end-7:end-4);
+%     name2=d(j+1,1).name; name2=name2(end-7:end-4);
+    
+     a1=list_opt{i,1};
+     a2=list_opt{i+1,1};
+     a3=list_opt{i+2,1};
+     a4=list_opt{i+3,1};
+     a5=list_opt{i+4,1};
+     a6=list_opt{i+5,1};
+    
+%      date1=a(1:6);
+%      date2=a(8:end);
+    
+    %Tbaseline=num2str(datenum(date2,'yymmdd')-datenum(date1,'yymmdd'));
+
+    eval(['!cp ../Automatic_S1_im_run6.sh ./Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    
+    eval(['!sed -i ''' '3s/year/2017/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '3s/date1/' a1 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    
+    eval(['!sed -i ''' '20s/year/2017/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '20s/date1/' a2 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    
+    eval(['!sed -i ''' '37s/year/2017/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '37s/date1/' a3 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    
+    
+    eval(['!sed -i ''' '54s/year/2017/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '54s/date1/' a4 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+        
+    eval(['!sed -i ''' '71s/year/2017/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '71s/date1/' a5 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+
+    eval(['!sed -i ''' '88s/year/2017/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+    eval(['!sed -i ''' '88s/date1/' a6 '/' ''' Automatic_S1_im_run_' a1(1:8) '_' a6(10:end) '.sh']);
+
 
 i
 end
