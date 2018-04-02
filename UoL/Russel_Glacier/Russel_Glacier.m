@@ -468,12 +468,25 @@ for i=1:size(list_opt,1);
 %   path2=[pathsate list{i+1,1} '/'];
     %d=dir(temp);
     d=dir(pwd);
-    name1=d(j,1).name; name1=name1(end-7:end-4);
-    name2=d(j+1,1).name; name2=name2(end-7:end-4);
     
     a=list_opt{i,1};
     date1=a(1:8);
     date2=a(10:end);
+
+    name1t=d(j,1).name; 
+    name2t=d(j+1,1).name;
+    
+    if (contains(name1t, date1))
+        rr=1
+     name1=name1t(end-7:end-4);
+     name2=name2t(end-7:end-4);
+     
+    else
+        rr=2
+     name1=name2t(end-7:end-4);
+     name2=name1t(end-7:end-4);   
+     
+    end
     
     Tbaseline=num2str(datenum(date2,'yyyymmdd')-datenum(date1,'yyyymmdd'));
 
@@ -702,13 +715,28 @@ for i=1:size(list_opt,1);
     cd(path1)
 %   path2=[pathsate list{i+1,1} '/'];
     %d=dir(temp);
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
     d=dir(pwd);
-    name1=d(j,1).name; name1=name1(end-7:end-4);
-    name2=d(j+1,1).name; name2=name2(end-7:end-4);
     
     a=list_opt{i,1};
     date1=a(1:8);
     date2=a(10:end);
+
+    name1t=d(j,1).name; 
+    name2t=d(j+1,1).name;
+    
+    if (contains(name1t, date1))
+        rr=1
+     name1=name1t(end-7:end-4);
+     name2=name2t(end-7:end-4);
+     
+    else
+        rr=2
+     name1=name2t(end-7:end-4);
+     name2=name1t(end-7:end-4);   
+     
+    end
     
     Tbaseline=num2str(datenum(date2,'yyyymmdd')-datenum(date1,'yyyymmdd'));
 
@@ -734,11 +762,11 @@ end
 
 clear all
 
-pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2016/'];
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2017/'];
 
 d_opt=dir(pathsate_opt);
 j=1;
-for i=4:length(d_opt)-2;
+for i=4:length(d_opt);
     name=d_opt(i,1).name;
     data{j,1}=cellstr(name);
     %date{j,1}=cellstr(name(18:25));
