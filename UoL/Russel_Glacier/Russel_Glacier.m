@@ -974,6 +974,116 @@ gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o  ../Russel_vel_N
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+
+%% Organize to merge
+
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2015/'];
+destination=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_SNR/'];
+
+list_opt=list_opt_Russel2015;
+
+j=1;
+for i=1:length(list_opt);
+    path1=[pathsate_opt list_opt{i,1} '/'];
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+    %dest=[destination list_opt{i,1} '/'];    
+    %eval(['!mkdir ' dest]);
+
+    
+cd(path1);
+
+eval( ['!cp ./*ccpN.gc.tiff ' destination]);
+ 
+eval( ['!cp ./*ccsN.gc.tiff ' destination]);
+ 
+%   date=list_opt{i,1};
+%   date_2015(i,:)=['20' date(1:7) '20' date(8:end)];
+%   
+end
+
+
+clear path1 list_opt pathsate_opt date data ans i j
+
+
+% 2016 
+
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2016/'];
+destination=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_SNR/'];
+
+list_opt=list_opt_Russel2016;
+
+j=1;
+for i=1:length(list_opt);
+    path1=[pathsate_opt list_opt{i,1} '/'];
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+    %dest=[destination list_opt{i,1} '/'];    
+    %eval(['!mkdir ' dest]);
+
+    
+cd(path1);
+
+eval( ['!cp ./*ccpN.gc.tiff ' destination]);
+ 
+eval( ['!cp ./*ccsN.gc.tiff ' destination]);
+ 
+  
+  %date_2016(i,:)=list_opt{i,1};
+  
+end
+
+clear path1 list_opt pathsate_opt date data ans i j
+
+
+% 2017
+
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2017/'];
+destination=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_SNR/'];
+
+list_opt=list_opt_Russel2017;
+
+j=1;
+for i=1:length(list_opt);
+    path1=[pathsate_opt list_opt{i,1} '/'];
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+    %dest=[destination list_opt{i,1} '/'];    
+    %eval(['!mkdir ' dest]);
+
+    
+cd(path1);
+
+eval( ['!cp ./*ccpN.gc.tiff ' destination]);
+ 
+eval( ['!cp ./*ccsN.gc.tiff ' destination]);
+ 
+%date_2017(i,:)=list_opt{i,1};
+  
+end
+
+clear path1 list_opt pathsate_opt date data ans i j
+
+%%%%%% Merge using gdal_merge.py (use in command line)
+
+cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_SNR/
+
+!ls -1 *ccpN.gc.tiff > ccp_tiff_list.txt
+
+!gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o ../Russel_ccp.tif ./*ccpN.gc.tiff
+
+
+!ls -1 *ccsN.gc.tiff > ccs_tiff_list.txt
+
+!gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o  ../Russel_ccs.tif ./*ccsN.gc.tiff
+
+
+
+
+%%
 [Vel_Russel,R_russel]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_vel_filtered.tif');
 
 Vel_Russel(Vel_Russel==0)=nan;Vel_Russel(Vel_Russel<-99998)=nan;
@@ -996,6 +1106,31 @@ V=Vel_Russel;
 V=movmean(V,10,'omitnan');
 
 Vel_Russel=V;
+
+%%% Error
+[CCP_Russel,R_ccp_russel]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_ccp.tif');
+CCP_Russel(CCP_Russel<-99998)=nan;CCP_Russel(CCP_Russel==0)=nan;
+
+[CCS_Russel,R_ccs_russel]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_ccs.tif');
+CCS_Russel(CCS_Russel<-99998)=nan;CCS_Russel(CCS_Russel==0)=nan;
+
+SNR_Russel=CCP_Russel./CCS_Russel;
+
+Noise_Russel=Vel_Russel./SNR_Russel;
+Noise_Russel_mean=nanmean(Noise_Russel,3);
+
+Noise_Russel_percentage=(Noise_Russel_mean./Vel_Russel_mean).*100;
+
+geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_noise.tif', Noise_Russel_mean, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
+geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_noise_percentage.tif', Noise_Russel_percentage, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
+
+
+% imagesc((Noise_Russel_mean./Vel_Russel_mean).*100)
+% 
+% caxis([0 20])
+
+
+
 
 
 % h=imagesc(xRussel, yRussel,Vel_Russel_mean); tt=double(~isnan(Vel_Russel_mean)); set(h,'AlphaData', tt);
@@ -1481,18 +1616,26 @@ Names_pts=extractfield(Russel_pts,'Ident');
 for i=1:size(V,3)
 G1_pts(i,1)=profile_ext(X_pts(1),Y_pts(1),V(:,:,i),R_russel);
 G1_pts(i,2)=profile_ext(X_pts(2),Y_pts(2),V(:,:,i),R_russel);
+G1_pts(i,3)=profile_ext(X_pts(11),Y_pts(11),V(:,:,i),R_russel);
 
 G2_pts(i,1)=profile_ext(X_pts(3),Y_pts(3),V(:,:,i),R_russel);
 G2_pts(i,2)=profile_ext(X_pts(4),Y_pts(4),V(:,:,i),R_russel);
+G2_pts(i,3)=profile_ext(X_pts(12),Y_pts(12),V(:,:,i),R_russel);
 
 G3_pts(i,1)=profile_ext(X_pts(5),Y_pts(5),V(:,:,i),R_russel);
 G3_pts(i,2)=profile_ext(X_pts(6),Y_pts(6),V(:,:,i),R_russel);
+G3_pts(i,3)=profile_ext(X_pts(13),Y_pts(13),V(:,:,i),R_russel);
+
 
 G4_pts(i,1)=profile_ext(X_pts(7),Y_pts(7),V(:,:,i),R_russel);
 G4_pts(i,2)=profile_ext(X_pts(8),Y_pts(8),V(:,:,i),R_russel);
+G4_pts(i,3)=profile_ext(X_pts(14),Y_pts(14),V(:,:,i),R_russel);
+
 
 G5_pts(i,1)=profile_ext(X_pts(9),Y_pts(9),V(:,:,i),R_russel);
 G5_pts(i,2)=profile_ext(X_pts(10),Y_pts(10),V(:,:,i),R_russel);
+G5_pts(i,3)=profile_ext(X_pts(15),Y_pts(15),V(:,:,i),R_russel);
+
 
 end
 
@@ -1579,6 +1722,12 @@ G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G1_pts(44:end,2),aa_temp);
 G1_pts_days(:,2)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
 clear G_pts_temp
 
+G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G1_pts(1:12,3),aa_temp);
+G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G1_pts(13:43,3),aa_temp);
+G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G1_pts(44:end,3),aa_temp);
+G1_pts_days(:,3)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
+clear G_pts_temp
+
 % G2
 G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G2_pts(1:12,1),aa_temp);
 G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G2_pts(13:43,1),aa_temp);
@@ -1592,6 +1741,13 @@ G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G2_pts(44:end,2),aa_temp);
 G2_pts_days(:,2)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
 clear G_pts_temp
 
+G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G2_pts(1:12,3),aa_temp);
+G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G2_pts(13:43,3),aa_temp);
+G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G2_pts(44:end,3),aa_temp);
+G2_pts_days(:,3)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
+clear G_pts_temp
+
+
 % G3
 G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G3_pts(1:12,1),aa_temp);
 G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G3_pts(13:43,1),aa_temp);
@@ -1603,6 +1759,12 @@ G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G3_pts(1:12,2),aa_temp);
 G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G3_pts(13:43,2),aa_temp);
 G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G3_pts(44:end,2),aa_temp);
 G3_pts_days(:,2)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
+clear G_pts_temp
+
+G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G3_pts(1:12,3),aa_temp);
+G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G3_pts(13:43,3),aa_temp);
+G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G3_pts(44:end,3),aa_temp);
+G3_pts_days(:,3)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
 clear G_pts_temp
 
 % G4
@@ -1618,6 +1780,12 @@ G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G4_pts(44:end,2),aa_temp);
 G4_pts_days(:,2)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
 clear G_pts_temp
 
+G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G4_pts(1:12,3),aa_temp);
+G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G4_pts(13:43,3),aa_temp);
+G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G4_pts(44:end,3),aa_temp);
+G4_pts_days(:,3)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
+clear G_pts_temp
+
 % G5
 G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G5_pts(1:12,1),aa_temp);
 G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G5_pts(13:43,1),aa_temp);
@@ -1631,13 +1799,27 @@ G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G5_pts(44:end,2),aa_temp);
 G5_pts_days(:,2)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,2),G_pts_days_temp(:,3)],2);
 clear G_pts_temp
 
+G_pts_days_temp(:,1)=interp1(date_days(1:12,1),G5_pts(1:12,3),aa_temp);
+G_pts_days_temp(:,2)=interp1(date_days(13:43,1),G5_pts(13:43,3),aa_temp);
+G_pts_days_temp(:,3)=interp1(date_days(44:end,1),G5_pts(44:end,3),aa_temp);
+G5_pts_days(:,3)=nanmean([G_pts_days_temp(:,1),G_pts_days_temp(:,3),G_pts_days_temp(:,3)],2);
+clear G_pts_temp
+
 %%%% Plot
+
+plot((G1_pts_days(:,1)/G1_winter_mean(1,1)-1)*100,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot((G1_pts_days(:,2)/G1_winter_mean(1,2)-1)*100,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
+
+
 
 figure('units','centimeters','position',[0 0 35 20]);
 
 subplot(231)
-plot(G1_pts_days(:,1),'k','linewidth',2);hold on
-plot(G1_pts_days(:,2),'color',[0.6 0.6 0.6],'linewidth',2);
+plot(G1_pts_days(:,1),'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot(G1_pts_days(:,2),'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+plot(G1_pts_days(:,3),'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[0:50:400])
 title('Glacier 1','fontsize',14)
 ylim([0 400])
@@ -1650,8 +1832,9 @@ ylabel('Velocity (m yr^{-1})','fontsize',14,'fontweight','bold')
 %fill([0,110,110,0],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','--','EdgeColor',[0.5 0.5 0.5])
 
 subplot(232)
-plot(G2_pts_days(:,1),'k','linewidth',2);hold on
-plot(G2_pts_days(:,2),'color',[0.6 0.6 0.6],'linewidth',2);
+plot(G2_pts_days(:,1),'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot(G2_pts_days(:,2),'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+plot(G2_pts_days(:,3),'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 2','fontsize',14)
 ylim([0 400])
 set(gca,'fontsize',12)
@@ -1660,8 +1843,9 @@ xlabel('Days of year','fontsize',16,'fontweight','bold')
 %fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
 
 subplot(233)
-plot(G3_pts_days(:,1),'k','linewidth',2);hold on
-plot(G3_pts_days(:,2),'color',[0.6 0.6 0.6],'linewidth',2);
+plot(G3_pts_days(:,1),'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot(G3_pts_days(:,2),'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+plot(G3_pts_days(:,3),'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 3','fontsize',14)
 ylim([0 400])
 set(gca,'fontsize',12)
@@ -1670,8 +1854,9 @@ set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on
 
 
 subplot(2,3,4.5)
-plot(G4_pts_days(:,1),'k','linewidth',2);hold on
-plot(G4_pts_days(:,2),'color',[0.6 0.6 0.6],'linewidth',2);
+plot(G4_pts_days(:,1),'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot(G4_pts_days(:,2),'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+plot(G4_pts_days(:,3),'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 4','fontsize',14)
 ylim([0 400])
 set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[0:50:400])
@@ -1680,8 +1865,9 @@ ylabel('Velocity (m yr^{-1})','fontsize',14,'fontweight','bold')
 %fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
 
 subplot(2,3,5.5)
-plot(G5_pts_days(:,1),'k','linewidth',2);hold on
-plot(G5_pts_days(:,2),'color',[0.6 0.6 0.6],'linewidth',2);
+plot(G5_pts_days(:,1),'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot(G5_pts_days(:,2),'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+plot(G5_pts_days(:,3),'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 5','fontsize',14)
 ylim([0 400])
 set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[0:50:400])
@@ -1690,7 +1876,7 @@ set(gca,'fontsize',12)
 
 annotation(gcf,'textbox',[0.46 0.01354 0.15 0.06],'String',{'Days of year'},'LineStyle','none','fontweight','bold','FontSize',16,'FitBoxToText','on');
 
-legend('P1','P2','location','northeast');
+legend('P1','P2','P3','location','northeast');
 
 print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Pts_Russel_DaysOfYear
 %print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Pts_Russel_DaysOfYear_Shadow
@@ -1701,18 +1887,23 @@ print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel
 %%%% Plot dividing winter mean
 G1_winter_mean(1,1)=nanmean([G1_pts_days(1:110,1);G1_pts_days(220:365,1)]);
 G1_winter_mean(1,2)=nanmean([G1_pts_days(1:110,2);G1_pts_days(220:365,2)]);
+G1_winter_mean(1,3)=nanmean([G1_pts_days(1:110,3);G1_pts_days(220:365,3)]);
 
 G2_winter_mean(1,1)=nanmean([G2_pts_days(1:110,1);G2_pts_days(220:365,1)]);
 G2_winter_mean(1,2)=nanmean([G2_pts_days(1:110,2);G2_pts_days(220:365,2)]);
+G2_winter_mean(1,3)=nanmean([G2_pts_days(1:110,3);G2_pts_days(220:365,3)]);
 
 G3_winter_mean(1,1)=nanmean([G3_pts_days(1:110,1);G3_pts_days(220:365,1)]);
 G3_winter_mean(1,2)=nanmean([G3_pts_days(1:110,2);G3_pts_days(220:365,2)]);
+G3_winter_mean(1,3)=nanmean([G3_pts_days(1:110,3);G3_pts_days(220:365,3)]);
 
 G4_winter_mean(1,1)=nanmean([G4_pts_days(1:110,1);G4_pts_days(220:365,1)]);
 G4_winter_mean(1,2)=nanmean([G4_pts_days(1:110,2);G4_pts_days(220:365,2)]);
+G4_winter_mean(1,3)=nanmean([G4_pts_days(1:110,3);G4_pts_days(220:365,3)]);
 
 G5_winter_mean(1,1)=nanmean([G5_pts_days(1:110,1);G5_pts_days(220:365,1)]);
 G5_winter_mean(1,2)=nanmean([G5_pts_days(1:110,2);G5_pts_days(220:365,2)]);
+G5_winter_mean(1,3)=nanmean([G5_pts_days(1:110,3);G5_pts_days(220:365,3)]);
 
 
 figure('units','centimeters','position',[0 0 35 20]);
@@ -1785,17 +1976,18 @@ print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel
 
 
 
-
-
 figure('units','centimeters','position',[0 0 35 20]);
 
 subplot(231)
-plot((G1_pts_days(:,1)/G1_winter_mean(1,1)-1)*100,'k','linewidth',2);hold on
-plot((G1_pts_days(:,2)/G1_winter_mean(1,2)-1)*100,'color',[0.6 0.6 0.6],'linewidth',2);
+plot((G1_pts_days(:,1)/G1_winter_mean(1,1)-1)*100,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot((G1_pts_days(:,2)/G1_winter_mean(1,2)-1)*100,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
+
 title('Glacier 1','fontsize',14)
 plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
-ylim([-40 110])
-set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:100])
+ylim([-50 120])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
 set(gca,'fontsize',12)
 ylabel('Speed-up relative to winter (%)','fontsize',12,'fontweight','bold')
 
@@ -1805,58 +1997,146 @@ ylabel('Speed-up relative to winter (%)','fontsize',12,'fontweight','bold')
 %fill([0,110,110,0],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','--','EdgeColor',[0.5 0.5 0.5])
 
 subplot(232)
-plot((G2_pts_days(:,1)/G2_winter_mean(1,1)-1)*100,'k','linewidth',2);hold on
-plot((G2_pts_days(:,2)/G2_winter_mean(1,2)-1)*100,'color',[0.6 0.6 0.6],'linewidth',2);
+plot((G2_pts_days(:,1)/G2_winter_mean(1,1)-1)*100,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot((G2_pts_days(:,2)/G2_winter_mean(1,2)-1)*100,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot((G2_pts_days(:,3)/G2_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 2','fontsize',14)
 plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
-ylim([-40 110])
-set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:100])
+ylim([-50 120])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
 set(gca,'fontsize',12)
 xlabel('Days of year','fontsize',16,'fontweight','bold')
 %fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
 
 subplot(233)
-plot((G3_pts_days(:,1)/G3_winter_mean(1,1)-1)*100,'k','linewidth',2);hold on
-plot((G3_pts_days(:,2)/G3_winter_mean(1,2)-1)*100,'color',[0.6 0.6 0.6],'linewidth',2);
+plot((G3_pts_days(:,1)/G3_winter_mean(1,1)-1)*100,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot((G3_pts_days(:,2)/G3_winter_mean(1,2)-1)*100,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot((G3_pts_days(:,3)/G3_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 3','fontsize',14)
 plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
-ylim([-40 110])
-set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:100])
+ylim([-50 120])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
 set(gca,'fontsize',12)
 %fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
 
 
 subplot(2,3,4.5)
-plot((G4_pts_days(:,1)/G4_winter_mean(1,1)-1)*100,'k','linewidth',2);hold on
-plot((G4_pts_days(:,2)/G4_winter_mean(1,2)-1)*100,'color',[0.6 0.6 0.6],'linewidth',2);
+plot((G4_pts_days(:,1)/G4_winter_mean(1,1)-1)*100,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot((G4_pts_days(:,2)/G4_winter_mean(1,2)-1)*100,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot((G4_pts_days(:,3)/G4_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 4','fontsize',14)
 plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
-ylim([-40 110])
-set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:100])
+ylim([-50 120])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
 set(gca,'fontsize',12)
 ylabel('Speed-up relative to winter (%)','fontsize',12,'fontweight','bold')
 %fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
 
 subplot(2,3,5.5)
-plot((G5_pts_days(:,1)/G5_winter_mean(1,1)-1)*100,'k','linewidth',2);hold on
-plot((G5_pts_days(:,2)/G5_winter_mean(1,2)-1)*100,'color',[0.6 0.6 0.6],'linewidth',2);
+plot((G5_pts_days(:,1)/G5_winter_mean(1,1)-1)*100,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot((G5_pts_days(:,2)/G5_winter_mean(1,2)-1)*100,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot((G5_pts_days(:,3)/G5_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
 title('Glacier 5','fontsize',14)
 plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
-ylim([-40 110])
-set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:100])
+ylim([-50 120])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
 set(gca,'fontsize',12)
 %fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
 
 annotation(gcf,'textbox',[0.46 0.01354 0.15 0.06],'String',{'Days of year'},'LineStyle','none','fontweight','bold','FontSize',16,'FitBoxToText','on');
 
-legend('P1','P2','location','northeast');
+legend('P1','P2','P3','location','northeast');
 
 print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Pts_Russel_DaysOfYear_Divided_Winter
 %print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Pts_Russel_DaysOfYear_Shadow
 
 
 
-%%
+%% Mean relative velocity for the 3 points:
+
+P1_relativeWinter=[(G1_pts_days(:,1)/G1_winter_mean(1,1)-1)*100, (G2_pts_days(:,1)/G2_winter_mean(1,1)-1)*100,(G3_pts_days(:,1)/G3_winter_mean(1,1)-1)*100,(G4_pts_days(:,1)/G4_winter_mean(1,1)-1)*100,(G5_pts_days(:,1)/G5_winter_mean(1,1)-1)*100];
+P1_relativeWinter_mean=nanmean(P1_relativeWinter,2);
+
+P2_relativeWinter=[(G1_pts_days(:,2)/G1_winter_mean(2)-1)*100, (G2_pts_days(:,2)/G2_winter_mean(2)-1)*100,(G3_pts_days(:,2)/G3_winter_mean(2)-1)*100,(G4_pts_days(:,2)/G4_winter_mean(2)-1)*100,(G5_pts_days(:,2)/G5_winter_mean(2)-1)*100];
+P2_relativeWinter_mean=nanmean(P2_relativeWinter,2);
+
+P3_relativeWinter=[(G1_pts_days(:,3)/G1_winter_mean(3)-1)*100, (G2_pts_days(:,3)/G2_winter_mean(3)-1)*100,(G3_pts_days(:,3)/G3_winter_mean(3)-1)*100,(G4_pts_days(:,3)/G4_winter_mean(3)-1)*100,(G5_pts_days(:,3)/G5_winter_mean(3)-1)*100];
+P3_relativeWinter_mean=nanmean(P3_relativeWinter,2);
+
+
+figure('units','centimeters','position',[0 0 12 12]);
+plot(P1_relativeWinter_mean,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+plot(P2_relativeWinter_mean,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+plot(P3_relativeWinter_mean,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);
+%title('Glacier 5','fontsize',14)
+plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
+ylim([-40 100])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
+set(gca,'fontsize',12)
+%fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
+xlabel('Days of year','fontsize',14,'fontweight','bold')
+ylabel('Speed-up relative to winter (%)','fontsize',14,'fontweight','bold')
+
+legend('P1','P2','P3','location','northeast');
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Pts_Russel_DaysOfYear_Relative_to_Winter_mean
+
+
+figure('units','centimeters','position',[0 0 36 12]);
+subplot(131)
+plot(P1_relativeWinter_mean,'o','linestyle','none','markersize',4,'markerfacecolor','k','markeredgecolor','k');hold on
+%title('Glacier 5','fontsize',14)
+plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
+ylim([-40 100])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
+set(gca,'fontsize',12)
+%fill([130,190,190,130],[0,0,400,400],[0.5 0.5 0.5],'FaceAlpha', 0.1,'linestyle','none','EdgeColor',[0.5 0.5 0.5])
+ylabel('Speed-up relative to winter (%)','fontsize',14,'fontweight','bold')
+title('P1','fontsize',14)
+
+subplot(132)
+plot(P2_relativeWinter_mean,'^','markersize',4,'markerfacecolor',[0.6 0.6 0.6],'markeredgecolor',[0.6 0.6 0.6]);hold on;
+xlabel('Days of year','fontsize',14,'fontweight','bold')
+plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
+ylim([-40 100])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
+set(gca,'fontsize',12)
+title('P2','fontsize',14)
+
+%plot((G1_pts_days(:,3)/G1_winter_mean(1,3)-1)*100,'square','linestyle','none','markersize',4,'markerfacecolor',[0 0.4470 0.7410],'markeredgecolor',[0 0.4470 0.7410]);
+subplot(133)
+plot(P3_relativeWinter_mean,'square','linestyle','none','markersize',4,'markerfacecolor',[0.8500 0.3250 0.0980],'markeredgecolor',[0.8500 0.3250 0.0980]);hold on;
+plot([0 400],[0 0],'linestyle','--','color',[0.7 0.7 0.7])
+ylim([-40 100])
+set(gca,'xtick',[0:60:365],'xticklabel',[0:60:360],'XMinorTick','on','xgrid','on','ytick',[-40:20:120])
+set(gca,'fontsize',12)
+title('P3','fontsize',14)
+
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Pts_Russel_DaysOfYear_Relative_to_Winter_mean_subplots
+
+
+ 
+
+
+
+
+
+
+
+
+[latRussel,lonRussel] = ps2ll(YRussel,XRussel,'TrueLat',70,'meridian',-45); 
+
+[latRussel,lonRussel] = projinv(info_Russel,XRussel,YRussel);
+[x_la,y_lo] = projfwd(info_Russel,lat,lon);
+
+
+
 %%% Mean
 figure('units','centimeters','position',[0 0 12 12]);
     set(gcf,'color','w')
