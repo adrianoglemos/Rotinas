@@ -2241,5 +2241,880 @@ xlim([-250000 -50000])
 ylim([-2550000 -2350000])
 
 
+%%
+%%% Load Cryosat elevation change
+
+load('/nfs/a59/cryosat/output/py10ts/gis_smb_v2/cs_cumdz_stack_to0817.mat','cs_cumdz_stack','ts_midpt_sampling_vec','gridx','gridy','cs_z_stack');
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% where:
+% 
+% gridx/gridy = x/y grids
+% 
+% cs_cumdz_stack = monthly cumulative elevation change stack at 5 km
+% 
+% ts_midpt_sampling_vec = time series vector
+% 
+% In all my plots I smooth the time series using a Gaussian with a 6 month window
+%  
+% To get ice thickness just subtract the bedrock height from each of the monthly grids.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+ 
+[tom_mask,Rcryo]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/tom_mask.tif');
+clear tom_mask
+
+% Mask_Cryosat=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Tom_mask/Altimetry_mask_polygon.shp');
+% X_mask_cryosat=
+
+
+[Y,M] = meshgrid(2010:2017, 1:12);
+time_cryo = datenum([Y(:), M(:), ones(numel(Y),1)]);
+
+%time_cryo=datenum({'01082010': '01102017'],'ddmmyyy');
+
+
+% bedmap
+
+cd /nfs/a59/eeagdl/DATABASE/GREENLAND/Bed_Map
+
+ncdisp('/nfs/a59/eeagdl/DATABASE/GREENLAND/BedMachine_V3/BedMachineGreenland-2017-09-20.nc');
+x_Bed_GRIS=ncread('/nfs/a59/eeagdl/DATABASE/GREENLAND/BedMachine_V3/BedMachineGreenland-2017-09-20.nc','x');
+x_Bed_GRIS=double(x_Bed_GRIS);
+
+y_Bed_GRIS=ncread('/nfs/a59/eeagdl/DATABASE/GREENLAND/BedMachine_V3/BedMachineGreenland-2017-09-20.nc','y');
+y_Bed_GRIS=double(y_Bed_GRIS);
+
+Bed_GRIS=ncread('/nfs/a59/eeagdl/DATABASE/GREENLAND/BedMachine_V3/BedMachineGreenland-2017-09-20.nc','bed');
+
+
+%% Flux gates per elevation:
+
+IFlux_g600=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_600m_pts.shp');
+X_g600=extractfield(IFlux_g600,'X');
+Y_g600=extractfield(IFlux_g600,'Y');
+
+IFlux_g650=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_650m_pts.shp');
+X_g650=extractfield(IFlux_g650,'X');
+Y_g650=extractfield(IFlux_g650,'Y');
+
+IFlux_g700=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_700m_pts.shp');
+X_g700=extractfield(IFlux_g700,'X');
+Y_g700=extractfield(IFlux_g700,'Y');
+
+IFlux_g750=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_750m_pts.shp');
+X_g750=extractfield(IFlux_g750,'X');
+Y_g750=extractfield(IFlux_g750,'Y');
+
+IFlux_g800=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_800m_pts.shp');
+X_g800=extractfield(IFlux_g800,'X');
+Y_g800=extractfield(IFlux_g800,'Y');
+
+IFlux_g850=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_850m_pts.shp');
+X_g850=extractfield(IFlux_g850,'X');
+Y_g850=extractfield(IFlux_g850,'Y');
+
+IFlux_g900=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_900m_pts.shp');
+X_g900=extractfield(IFlux_g900,'X');
+Y_g900=extractfield(IFlux_g900,'Y');
+
+
+% plot(X_g600,Y_g600); hold on
+% plot(X_g650,Y_g650);
+% plot(X_g700,Y_g700);
+% plot(X_g750,Y_g750);
+% plot(X_g800,Y_g800);
+% plot(X_g850,Y_g850);
+% plot(X_g900,Y_g900);
+
+% GIMP
+
+[gimp,Rgimp]=geotiffread('/nfs/a59/eeagdl/DATABASE/GREENLAND/GIMP_DEM/gimpdem_90m.tif');
+
+% BedMachine V3
+
+
+[Bed_GRIS,R_bed]=geotiffread('/nfs/a59/eeagdl/DATABASE/GREENLAND/BedMachine_V3/BedMachineV3.tif');
+
+
+% Extract elevation
+Elev_600=profile_ext_mean(X_g600,Y_g600,gimp,Rgimp,5);
+Elev_650=profile_ext_mean(X_g650,Y_g650,gimp,Rgimp,5);
+Elev_700=profile_ext_mean(X_g700,Y_g700,gimp,Rgimp,5);
+Elev_750=profile_ext_mean(X_g750,Y_g750,gimp,Rgimp,5);
+Elev_800=profile_ext_mean(X_g800,Y_g800,gimp,Rgimp,5);
+Elev_850=profile_ext_mean(X_g850,Y_g850,gimp,Rgimp,5);
+Elev_900=profile_ext_mean(X_g900,Y_g900,gimp,Rgimp,5);
+
+Bed_600=profile_ext_mean(X_g600,Y_g600,Bed_GRIS,R_bed,5);
+Bed_650=profile_ext_mean(X_g650,Y_g650,Bed_GRIS,R_bed,5);
+Bed_700=profile_ext_mean(X_g700,Y_g700,Bed_GRIS,R_bed,5);
+Bed_750=profile_ext_mean(X_g750,Y_g750,Bed_GRIS,R_bed,5);
+Bed_800=profile_ext_mean(X_g800,Y_g800,Bed_GRIS,R_bed,5);
+Bed_850=profile_ext_mean(X_g850,Y_g850,Bed_GRIS,R_bed,5);
+Bed_900=profile_ext_mean(X_g900,Y_g900,Bed_GRIS,R_bed,5);
+
+
+
+% 2455
+% 2319
+% 4320
+% 4863
+% 10352
+% 6705
+% 7635
+
+dist_600=(120897/(size(X_g600,2)))*-2455:(120897/(size(X_g600,2)-1)):(120897/(size(X_g600,2)))*(size(X_g600,2)-2455);
+
+dist_650=(75162/(size(X_g650,2)))*-2319:(75162/(size(X_g650,2)-1)):(75162/(size(X_g650,2)))*(size(X_g650,2)-2319);
+
+dist_700=(89885/(size(X_g700,2)))*-4320:(89885/(size(X_g700,2)-1)):(89885/(size(X_g700,2)))*(size(X_g700,2)-4320);
+
+dist_750=(73579/(size(X_g750,2)))*-4863:(73579/(size(X_g750,2)-1)):(73579/(size(X_g750,2)))*(size(X_g750,2)-4863);
+
+dist_800=(98713/(size(X_g800,2)))*-10352:(98713/(size(X_g800,2)-1)):(98713/(size(X_g800,2)))*(size(X_g800,2)-10352);
+
+dist_850=(67725/(size(X_g850,2)))*-6705:(67725/(size(X_g850,2)-1)):(67725/(size(X_g850,2)))*(size(X_g850,2)-6705);
+
+dist_900=(86318/(size(X_g900,2)))*-7635:(86318/(size(X_g900,2)-1)):(86318/(size(X_g900,2)))*(size(X_g900,2)-7635);
+
+% dist_600=120897;
+% dist_650=75162;
+% dist_700=89885;
+% dist_750=73579;
+% dist_800=98713;
+% dist_850=67725;
+% dist_900=86318;
+plot(dist_600,Elev_600);hold on;
+plot(dist_650,Elev_650);
+plot(dist_700,Elev_700);
+plot(dist_750,Elev_750);
+plot(dist_800,Elev_800);
+plot(dist_850,Elev_850);
+plot(dist_900,Elev_900);
+
+plot(dist_600,Bed_600);hold on;
+plot(dist_650,Bed_650);
+plot(dist_700,Bed_700);
+plot(dist_750,Bed_750);
+plot(dist_800,Bed_800);
+plot(dist_850,Bed_850);
+plot(dist_900,Bed_900);
+
+
+
+
+Vel_winter_600=profile_ext_mean(X_g600,Y_g600,winter_Russel,R_russel,5);
+Vel_winter_650=profile_ext_mean(X_g650,Y_g650,winter_Russel,R_russel,5);
+Vel_winter_700=profile_ext_mean(X_g700,Y_g700,winter_Russel,R_russel,5);
+Vel_winter_750=profile_ext_mean(X_g750,Y_g750,winter_Russel,R_russel,5);
+Vel_winter_800=profile_ext_mean(X_g800,Y_g800,winter_Russel,R_russel,5);
+Vel_winter_850=profile_ext_mean(X_g850,Y_g850,winter_Russel,R_russel,5);
+Vel_winter_900=profile_ext_mean(X_g900,Y_g900,winter_Russel,R_russel,5);
+
+plot(dist_600,Vel_winter_600);hold on;
+plot(dist_650,Vel_winter_650);
+plot(dist_700,Vel_winter_700);
+plot(dist_750,Vel_winter_750);
+plot(dist_800,Vel_winter_800);
+plot(dist_850,Vel_winter_850);
+plot(dist_900,Vel_winter_900);
+
+
+Vel_summer_600=profile_ext_mean(X_g600,Y_g600,summer_Russel,R_russel,5);
+Vel_summer_650=profile_ext_mean(X_g650,Y_g650,summer_Russel,R_russel,5);
+Vel_summer_700=profile_ext_mean(X_g700,Y_g700,summer_Russel,R_russel,5);
+Vel_summer_750=profile_ext_mean(X_g750,Y_g750,summer_Russel,R_russel,5);
+Vel_summer_800=profile_ext_mean(X_g800,Y_g800,summer_Russel,R_russel,5);
+Vel_summer_850=profile_ext_mean(X_g850,Y_g850,summer_Russel,R_russel,5);
+Vel_summer_900=profile_ext_mean(X_g900,Y_g900,summer_Russel,R_russel,5);
+
+plot(dist_600,Vel_summer_600);hold on;
+plot(dist_650,Vel_summer_650);
+plot(dist_700,Vel_summer_700);
+plot(dist_750,Vel_summer_750);
+plot(dist_800,Vel_summer_800);
+plot(dist_850,Vel_summer_850);
+plot(dist_900,Vel_summer_900);
+
+
+% Interpolating the IB to GIMP resolution and transform to GAMMA format
+
+
+window=[7 7];
+%cs_z_stack_median20x20=movmedian(cs_z_stack,window,'omitnan');
+
+addpath('/nfs/a59/cryosat/output/py10ts/scripts/')
+
+for i=1:87
+cs_z_stack_median20x20(:,:,i) = nanmedfilt2(cs_z_stack(:,:,i),window);
+end
+
+
+% figure; h = imagesc(test); set(h,'alphadata',~isnan(test))
+% axis xy
+
+
+
+for i=1: size(cs_z_stack,3)
+Z_600(:,i)=profile_ext_mean(X_g600,Y_g600,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+Z_650(:,i)=profile_ext_mean(X_g650,Y_g650,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+Z_700(:,i)=profile_ext_mean(X_g700,Y_g700,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+Z_750(:,i)=profile_ext_mean(X_g750,Y_g750,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+Z_800(:,i)=profile_ext_mean(X_g800,Y_g800,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+Z_850(:,i)=profile_ext_mean(X_g850,Y_g850,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+Z_900(:,i)=profile_ext_mean(X_g900,Y_g900,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1);
+end
+
+%  for i=1: size(cs_z_stack,3)
+% Z_600(:,i)=profile_ext_mean(X_g600,Y_g600,cs_z_stack(:,:,i),Rcryo,20);
+% Z_650(:,i)=profile_ext_mean(X_g650,Y_g650,cs_z_stack(:,:,i),Rcryo,20);
+% Z_700(:,i)=profile_ext_mean(X_g700,Y_g700,cs_z_stack(:,:,i),Rcryo,20);
+% Z_750(:,i)=profile_ext_mean(X_g750,Y_g750,cs_z_stack(:,:,i),Rcryo,20);
+% Z_800(:,i)=profile_ext_mean(X_g800,Y_g800,cs_z_stack(:,:,i),Rcryo,20);
+% Z_850(:,i)=profile_ext_mean(X_g850,Y_g850,cs_z_stack(:,:,i),Rcryo,20);
+% Z_900(:,i)=profile_ext_mean(X_g900,Y_g900,cs_z_stack(:,:,i),Rcryo,20);
+% end
+
+
+time_cryo = datenum([Y(:), M(:), ones(numel(Y),1)]);
+
+
+for i=1:size(Z_600,2)
+Thick_600(:,i)=Z_600(:,i)-Bed_600;
+Thick_650(:,i)=Z_650(:,i)-Bed_650;
+Thick_700(:,i)=Z_700(:,i)-Bed_700;
+Thick_750(:,i)=Z_750(:,i)-Bed_750;
+Thick_800(:,i)=Z_800(:,i)-Bed_800;
+Thick_850(:,i)=Z_850(:,i)-Bed_850;
+Thick_900(:,i)=Z_900(:,i)-Bed_900;
+
+end
+
+% % Calculate the area under the curve:
+% for i=1:size(Z_600,2)
+% Area_600(:,i)=trapz(dist_600(1,:)',fillgaps(Thick_600(:,i)));
+% Area_650(:,i)=trapz(dist_650(1,:)',fillgaps(Thick_650(:,i)));
+% 
+% Area_700(:,i)=trapz(dist_700(1,:)',fillgaps(Thick_700(:,i)));
+% Area_750(:,i)=trapz(dist_750(1,:)',fillgaps(Thick_750(:,i)));
+% 
+% Area_800(:,i)=trapz(dist_800(1,:)',fillgaps(Thick_800(:,i)));
+% Area_850(:,i)=trapz(dist_850(1,:)',fillgaps(Thick_850(:,i)));
+% 
+% Area_900(:,i)=trapz(dist_900(1,:)',fillgaps(Thick_900(:,i)));
+% 
+% end
+
+% Calculate the area under the curve:
+for i=1:size(Z_600,2)
+ 
+ try
+     k=1;
+for j=1:100:size(Thick_600,1)
+Area_600(i,k)=trapz(dist_600(1,j:j+99)',fillgaps(Thick_600(j:j+99,i)));
+k=k+1;
+end
+ end
+
+ try
+   k=1;  
+for j=1:100:size(Thick_650,1)
+Area_650(i,k)=trapz(dist_650(1,j:j+99)',fillgaps(Thick_650(j:j+99,i)));
+k=k+1;
+end
+ end
+
+try
+  k=1;    
+for j=1:100:size(Thick_700,1)
+Area_700(i,k)=trapz(dist_700(1,j:j+99)',fillgaps(Thick_700(j:j+99,i)));
+k=k+1;
+end
+end
+
+try
+   k=1;
+for j=1:100:size(Thick_750,1)
+Area_750(i,k)=trapz(dist_750(1,j:j+99)',fillgaps(Thick_750(j:j+99,i)));
+k=k+1;
+end
+end
+
+try
+  k=1;   
+for j=1:100:size(Thick_800,1)
+Area_800(i,k)=trapz(dist_800(1,j:j+99)',fillgaps(Thick_800(j:j+99,i)));
+k=k+1;
+end
+end
+
+try
+  k=1;   
+for j=1:100:size(Thick_850,1)
+Area_850(i,k)=trapz(dist_850(1,j:j+99)',fillgaps(Thick_850(j:j+99,i)));
+k=k+1;
+end
+end
+
+try
+  k=1;   
+for j=1:100:size(Thick_900,1)
+Area_900(i,k)=trapz(dist_900(1,j:j+99)',fillgaps(Thick_900(j:j+99,i)));
+k=k+1;
+end
+end
+
+end
+
+% 
+% 
+% 
+% figure; plot(Area_600(1,:).*Vel_temp(1:end-1)')
+
+
+[Vel_monthly_mean,t_downsamp] = downsample_ts(Vel_Russel,date_Russel_num,'function','nanmean');
+
+% removing months from 2015 but December: 
+Vel_monthly_mean(:,:,1:6)=[];
+t_downsamp(1:6)=[];
+
+
+% Extract monthly Vel profile (along the gate):
+
+j=1;
+for i=1:25
+  Vel_600(:,i)=profile_ext_mean(X_g600,Y_g600,Vel_monthly_mean(:,:,i),R_russel,5);  
+  Vel_650(:,i)=profile_ext_mean(X_g650,Y_g650,Vel_monthly_mean(:,:,i),R_russel,5);
+  
+  Vel_700(:,i)=profile_ext_mean(X_g700,Y_g700,Vel_monthly_mean(:,:,i),R_russel,5);  
+  Vel_750(:,i)=profile_ext_mean(X_g750,Y_g750,Vel_monthly_mean(:,:,i),R_russel,5);
+  
+  Vel_800(:,i)=profile_ext_mean(X_g800,Y_g800,Vel_monthly_mean(:,:,i),R_russel,5);  
+  Vel_850(:,i)=profile_ext_mean(X_g850,Y_g850,Vel_monthly_mean(:,:,i),R_russel,5);
+
+  Vel_900(:,i)=profile_ext_mean(X_g900,Y_g900,Vel_monthly_mean(:,:,i),R_russel,5);  
+
+end
+
+
+
+% Mean velocity every 100m:
+
+for i=1:25
+ 
+ try
+     k=1;
+for j=1:100:size(Vel_600,1)
+Vel_600_mean(i,k)=nanmean(Vel_600(j:j+99,i));
+k=k+1;
+end
+ end
+ 
+ try
+     k=1;
+for j=1:100:size(Vel_650,1)
+Vel_650_mean(i,k)=nanmean(Vel_650(j:j+99,i));
+k=k+1;
+end
+ end
+
+try
+     k=1;
+for j=1:100:size(Vel_700,1)
+Vel_700_mean(i,k)=nanmean(Vel_700(j:j+99,i));
+k=k+1;
+end
+ end
+
+try
+     k=1;
+for j=1:100:size(Vel_750,1)
+Vel_750_mean(i,k)=nanmean(Vel_750(j:j+99,i));
+k=k+1;
+end
+ end
+
+try
+     k=1;
+for j=1:100:size(Vel_800,1)
+Vel_800_mean(i,k)=nanmean(Vel_800(j:j+99,i));
+k=k+1;
+end
+end
+ 
+try
+     k=1;
+for j=1:100:size(Vel_850,1)
+Vel_850_mean(i,k)=nanmean(Vel_850(j:j+99,i));
+k=k+1;
+end
+ end
+
+try
+     k=1;
+for j=1:100:size(Vel_900,1)
+Vel_900_mean(i,k)=nanmean(Vel_900(j:j+99,i));
+k=k+1;
+end
+end
+ 
+end
+
+
+
+%Flux calculation (Dec_2015 to Dec_2017) j=63 => Dec_2015
+
+j=63;
+for i=1:25
+Flux_600(i,:)=(Area_600(j,:).*Vel_600_mean(i,:));
+Flux_650(i,:)=(Area_650(j,:).*Vel_650_mean(i,:));
+
+Flux_700(i,:)=(Area_700(j,:).*Vel_700_mean(i,:));
+Flux_750(i,:)=(Area_750(j,:).*Vel_750_mean(i,:));
+
+Flux_800(i,:)=(Area_800(j,:).*Vel_800_mean(i,:));
+Flux_850(i,:)=(Area_850(j,:).*Vel_850_mean(i,:));
+
+Flux_900(i,:)=(Area_900(j,:).*Vel_900_mean(i,:));
+
+j=j+1;
+end
+
+
+
+% Monthly Discharge (Dec_2015 to Dec_2017)
+
+for i=1:25
+Flux_600_monthly(i)=nansum(Flux_600(i,:));
+Flux_650_monthly(i)=nansum(Flux_650(i,:));
+
+Flux_700_monthly(i)=nansum(Flux_700(i,:));
+Flux_750_monthly(i)=nansum(Flux_750(i,:));
+
+Flux_800_monthly(i)=nansum(Flux_800(i,:));
+Flux_850_monthly(i)=nansum(Flux_850(i,:));
+
+Flux_900_monthly(i)=nansum(Flux_900(i,:));
+
+
+end
+
+
+% Cumulative discharge (Jan_2016 to Dec_2017)
+
+cum_Flux_600=nansum(Flux_600(1,:));
+cum_Flux_650=nansum(Flux_650(1,:));
+cum_Flux_700=nansum(Flux_800(1,:));
+cum_Flux_750=nansum(Flux_850(1,:));
+cum_Flux_800=nansum(Flux_700(1,:));
+cum_Flux_850=nansum(Flux_750(1,:));
+cum_Flux_900=nansum(Flux_900(1,:));
+
+for i=2:25
+cum_Flux_600(i)=[cum_Flux_600(i-1)+nansum(Flux_600(i,:))];
+cum_Flux_650(i)=[cum_Flux_650(i-1)+nansum(Flux_650(i,:))];
+
+cum_Flux_700(i)=[cum_Flux_700(i-1)+nansum(Flux_700(i,:))];
+cum_Flux_750(i)=[cum_Flux_750(i-1)+nansum(Flux_750(i,:))];
+
+cum_Flux_800(i)=[cum_Flux_800(i-1)+nansum(Flux_800(i,:))];
+cum_Flux_850(i)=[cum_Flux_850(i-1)+nansum(Flux_850(i,:))];
+
+cum_Flux_900(i)=[cum_Flux_900(i-1)+nansum(Flux_900(i,:))];
+
+
+end
+
+
+time_cryo_Flux=time_cryo(63:end);
+
+Vel_summer_600(1:100:end);
+
+
+dist_fill=[dist_600(1:100:end-99),fliplr(dist_600(1:100:end-99))];
+thick_fill=[fillgaps(Thick_600(1:100:end-99,1));fliplr(fillgaps(Thick_600(1:100:end-99,1)))];
+
+fill(dist_fill',thick_fill,'k');        
+
+figure
+pcolor(dist_600(1:100:end-99),fillgaps(Thick_600(1:100:end-99,1)),Flux_grid)
+area(dist_600(1:100:end-99),fillgaps(Thick_600(1:100:end-99,1))),Flux_grid)
+
+[dist_mesh,Thick_mesh]=meshgrid(dist_600(1:100:end-99),fillgaps(Thick_600(1:100:end-99,1)));
+Flux_grid=griddata(dist_600(1:100:end-99),fillgaps(Thick_600(1:100:end-99,1)),Flux_600(1,:),dist_mesh,Thick_mesh);
+
+Thick_mesh=Thick_mesh';
+
+
+%save('-v7.3','/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_23_05_2018.mat')
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% % Glacier 1
+% gate 600-> 1053:4963
+% gate 650-> 
+% 
+% 
+% 
+% profile 600: 2455
+% profile 650: 2319
+% profile 700: 
+% profile 750: 4863
+% 
+% % Glacier 2
+% gate 600 -> 32341:44027
+% 
+% profile 600: 36889
+% profile 650: 21633
+% profile 700: 28885
+% profile 750: 22309
+% profile 800: 33669
+% profile 850: 22637
+% profile 900: 29018
+% 
+% 
+% % Glacier 3
+% gate 600 -> 69322:75958
+% 
+% profile 600: 73376
+% profile 650: 45224
+% profile 700: 56578
+% profile 750: 47126
+% profile 800: 64967
+% profile 850: 46111
+% profile 900: 57686
+% 
+% % Glacier 4
+% gate 600 -> 82224:89567
+% 
+% prifile 600: 86596
+% profile 650: 53069
+% profile 700: 65142
+% profile 750: 51961
+% profile 800: 68521
+% profile 850: 47541
+% profile 900: 57686
+% 
+% % Glacier 5
+% gate 600 -> 98150:102780
+% 
+% profile 600: 100362
+% profile 650: 63758
+% profile 700: 78412
+% profile 750: 63146
+% profile 800: 83458
+% profile 850: 57139
+% profile 900: 70817
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+% GT= the mass of 1.091 cubic km of ice
+ice_density=917; % kg/m3
+
+figure('PaperOrientation','landscape','position',[1 1 820 825])
+subplot(711)
+plot(dist_600(1:100:end-99)/1000,(nanmean(Flux_600,1)/1e+12)*(ice_density))
+ylim([0 0.1]);
+xlim([-10 120])
+title('600 m','fontsize',12)
+
+
+subplot(712)
+plot(dist_650(1:100:end-99)/1000,(nanmean(Flux_650,1)/1e+12)*(ice_density))
+ylim([0 0.1]);
+xlim([-10 120])
+title('650 m','fontsize',12)
+
+subplot(713)
+plot(dist_700(1:100:end-99)/1000,(nanmean(Flux_700,1)/1e+12)*(ice_density))
+ylim([0 0.1]);
+xlim([-10 120])
+title('700 m','fontsize',12)
+
+subplot(714)
+plot(dist_750(1:100:end-99)/1000,(nanmean(Flux_750,1)/1e+12)*(ice_density))
+ylabel('Mean ice discharge [Gt yr^{-1}]','fontsize',16,'fontweight','b')
+ylim([0 0.1]);
+xlim([-10 120])
+title('750 m','fontsize',12)
+
+subplot(715)
+plot(dist_800(1:100:end-99)/1000,(nanmean(Flux_800,1)/1e+12)*(ice_density))
+ylim([0 0.1]);
+xlim([-10 120])
+title('800 m','fontsize',12)
+
+
+subplot(716)
+plot(dist_850(1:100:end-99)/1000,(nanmean(Flux_850,1)/1e+12)*(ice_density))
+ylim([0 0.1]);
+xlim([-10 120])
+title('850 m','fontsize',12)
+
+subplot(717)
+plot(dist_900(1:100:end-99)/1000,(nanmean(Flux_900,1)/1e+12)*(ice_density))
+ylim([0 0.1]);
+xlim([-10 120])
+xlabel('Distance along the gate [km]','fontsize',16,'fontweight','b')
+title('900 m','fontsize',12)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Mean_Fluxes_600m_to_900m
+
+
+figure('PaperOrientation','portrait','position',[1 1 950 825])
+subplot(331)
+plot([1:12],(Flux_600_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_600_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('600 m','fontsize',12)
+ylim([0 10]);
+
+subplot(332)
+plot([1:12],(Flux_650_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_650_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('650 m','fontsize',12)
+ylim([0 10]);
+
+subplot(333)
+plot([1:12],(Flux_700_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_700_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('700 m','fontsize',12)
+ylim([0 10]);
+
+subplot(334)
+plot([1:12],(Flux_750_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_750_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('750 m','fontsize',12)
+ylim([0 10]);
+
+subplot(335)
+plot([1:12],(Flux_800_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_800_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('800 m','fontsize',12)
+ylim([0 10.1]);
+
+subplot(336)
+plot([1:12],(Flux_850_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_850_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('850 m','fontsize',12)
+ylim([0 10]);
+
+subplot(337)
+plot([1:12],(Flux_900_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_900_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('900 m','fontsize',12)
+ylim([0 10]);
+
+
+Flux_monthly_mean_2016=mean([Flux_600_monthly(2:13);Flux_650_monthly(2:13); Flux_700_monthly(2:13); Flux_750_monthly(2:13); Flux_800_monthly(2:13); Flux_850_monthly(2:13); Flux_900_monthly(2:13)])
+Flux_monthly_mean_2017=mean([Flux_600_monthly(14:end-1); Flux_650_monthly(14:end-1); Flux_700_monthly(14:end-1); Flux_750_monthly(14:end-1); Flux_800_monthly(14:end-1); Flux_850_monthly(14:end-1); Flux_900_monthly(14:end-1)]); 
+
+subplot(3,3,8:9)
+plot([1:12],(Flux_monthly_mean_2016/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_monthly_mean_2017/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+legend('2016','2017')
+title('Mean','fontsize',12)
+ylim([0 10]);
+
+
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Monthly_Mean_Discharge_600m_to_900m
+
+
+% get fluxes in velocities summer and winter
+
+
+
+figure('PaperOrientation','portrait','position',[1 1 820 825])
+
+plot(dist_600(1:100:end-99),Vel_600_mean(2:13,:))
+
+plot(dist_600,Elev_600);hold on;
+plot(dist_600,Bed_600);hold on;
+
+plot(dist_600,Vel_summer_600+800);hold on;
+plot(dist_600,Vel_winter_600+800);hold on;
+
+plot(dist_600,Z_600_summer);
+plot(dist_600,Z_600_winter);
+
+set(gca,'yTick',[1:100:1400],'yticklabel',[0:100:700, 0:100:1400],'fontsize',12)
+
+
+figure('PaperOrientation','portrait','position',[1 1 820 825])
+subplot(311)
+plot(dist_900/1000,Elev_900);hold on;
+plot(dist_900/1000,Bed_900);hold on;
+plot(dist_900/1000,Z_900_summer);
+plot(dist_900/1000,Z_900_winter);
+set(gca,'fontsize',14)
+ylabel('Elevation (m)','fontsize',14)
+xlim([-10 80])
+ylabel('Elevation (m)','fontsize',14)
+
+subplot(3,1,2:3)
+
+plot(dist_900/1000,Vel_summer_900);hold on;
+plot(dist_900/1000,Vel_winter_900);hold on;
+legend('Summer','Winter')
+xlabel('Distance along the gate (km)','fontsize',14)
+ylabel('Velocity (m yr^{-1})','fontsize',14)
+set(gca,'fontsize',14)
+xlim([-10 80])
+
+set(gca,'yTick',[1:200:1600],'yticklabel',[0:200:1000, 0:200:400],'fontsize',12)
+
+
+figure; plot(Z_600)
+
+size(Z_600)
+size(Thick_600)
+% 63:87
+
+% Summer and winter elevation  MEAN
+
+Z_600_summer2016=nanmean(Z_600(:,68:71),2);
+Z_600_winter2016=nanmean(Z_600(:,[64:67, 72:75]),2);
+
+Z_600_summer2017=nanmean(Z_600(:,80:83),2);
+Z_600_winter2017=nanmean(Z_600(:,[76:79, 84:87]),2);
+
+%650
+Z_650_summer2016=nanmean(Z_650(:,68:71),2);
+Z_650_winter2016=nanmean(Z_650(:,[64:67, 72:75]),2);
+
+Z_650_summer2017=nanmean(Z_650(:,80:83),2);
+Z_650_winter2017=nanmean(Z_650(:,[76:79, 84:87]),2);
+
+
+%700
+Z_700_summer2016=nanmean(Z_700(:,68:71),2);
+Z_700_winter2016=nanmean(Z_700(:,[64:67, 72:75]),2);
+
+Z_700_summer2017=nanmean(Z_700(:,80:83),2);
+Z_700_winter2017=nanmean(Z_700(:,[76:79, 84:87]),2);
+
+%750
+Z_750_summer2016=nanmean(Z_750(:,68:71),2);
+Z_750_winter2016=nanmean(Z_750(:,[64:67, 72:75]),2);
+
+Z_750_summer2017=nanmean(Z_750(:,80:83),2);
+Z_750_winter2017=nanmean(Z_750(:,[76:79, 84:87]),2);
+
+%800
+Z_800_summer2016=nanmean(Z_800(:,68:71),2);
+Z_800_winter2016=nanmean(Z_800(:,[64:67, 72:75]),2);
+
+Z_800_summer2017=nanmean(Z_800(:,80:83),2);
+Z_800_winter2017=nanmean(Z_800(:,[76:79, 84:87]),2);
+
+%850
+Z_850_summer2016=nanmean(Z_850(:,68:71),2);
+Z_850_winter2016=nanmean(Z_850(:,[64:67, 72:75]),2);
+
+Z_850_summer2017=nanmean(Z_850(:,80:83),2);
+Z_850_winter2017=nanmean(Z_850(:,[76:79, 84:87]),2);
+
+%900
+Z_900_summer2016=nanmean(Z_900(:,68:71),2);
+Z_900_winter2016=nanmean(Z_900(:,[64:67, 72:75]),2);
+
+Z_900_summer2017=nanmean(Z_900(:,80:83),2);
+Z_900_winter2017=nanmean(Z_900(:,[76:79, 84:87]),2);
+
+
+% 
+Z_600_summer=nanmean([Z_600_summer2016,Z_600_summer2017],2);
+Z_600_winter=nanmean([Z_600_winter2016,Z_600_winter2017],2);
+
+Z_650_summer=nanmean([Z_650_summer2016,Z_650_summer2017],2);
+Z_650_winter=nanmean([Z_650_winter2016,Z_650_winter2017],2);
+
+Z_700_summer=nanmean([Z_700_summer2016,Z_700_summer2017],2);
+Z_700_winter=nanmean([Z_700_winter2016,Z_700_winter2017],2);
+
+Z_750_summer=nanmean([Z_750_summer2016,Z_750_summer2017],2);
+Z_750_winter=nanmean([Z_750_winter2016,Z_750_winter2017],2);
+
+Z_800_summer=nanmean([Z_800_summer2016,Z_800_summer2017],2);
+Z_800_winter=nanmean([Z_800_winter2016,Z_800_winter2017],2);
+
+Z_850_summer=nanmean([Z_850_summer2016,Z_850_summer2017],2);
+Z_850_winter=nanmean([Z_850_winter2016,Z_850_winter2017],2);
+
+Z_900_summer=nanmean([Z_900_summer2016,Z_900_summer2017],2);
+Z_900_winter=nanmean([Z_900_winter2016,Z_900_winter2017],2);
+
+size(Vel_summer_600(1:100:end-99))
+
+
+figure
+plot(dist_600,Z_600_summer2016);hold on
+plot(dist_600,Z_600_winter2016)
+
+plot(dist_600,Z_600_summer2017);hold on
+plot(dist_600,Z_600_winter2017)
+
+
+
+
+figure
+plot(dist_700,Z_700_summer2016);hold on
+plot(dist_700,Z_700_winter2016)
+
+plot(dist_700,Z_700_summer2017);hold on
+plot(dist_700,Z_700_winter2017)
+
+
+
+
+figure;
+
+plot(dist_600,Z_600_summer);hold on
+plot(dist_600,Z_600_winter)
+
+plot(dist_650,Z_650_summer);hold on
+plot(dist_650,Z_650_winter)
+
+plot(dist_700,Z_700_summer);hold on
+plot(dist_700,Z_700_winter)
+
+plot(dist_750,Z_750_summer);hold on
+plot(dist_750,Z_750_winter)
+
+plot(dist_800,Z_800_summer);hold on
+plot(dist_800,Z_800_winter)
+
+plot(dist_850,Z_850_summer);hold on
+plot(dist_850,Z_850_winter)
+
+plot(dist_900,Z_900_summer);hold on
+plot(dist_900,Z_900_winter)
