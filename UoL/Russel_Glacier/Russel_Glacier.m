@@ -1082,7 +1082,114 @@ cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_S
 
 
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%% Organize to merge
 
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2015/'];
+destination=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real/'];
+
+list_opt=list_opt_Russel2015;
+
+j=1;
+for i=1:length(list_opt);
+    path1=[pathsate_opt list_opt{i,1} '/'];
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+    %dest=[destination list_opt{i,1} '/'];    
+    %eval(['!mkdir ' dest]);
+
+    
+cd(path1);
+
+eval( ['!cp ./*real.gc.tiff ' destination]);
+ 
+eval( ['!cp ./*im.gc.tiff ' destination]);
+ 
+%   date=list_opt{i,1};
+%   date_2015(i,:)=['20' date(1:7) '20' date(8:end)];
+%   
+end
+
+
+clear path1 list_opt pathsate_opt date data ans i j
+
+
+% 2016 
+
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2016/'];
+destination=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real/'];
+
+list_opt=list_opt_Russel2016;
+
+j=1;
+for i=1:length(list_opt);
+    path1=[pathsate_opt list_opt{i,1} '/'];
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+    %dest=[destination list_opt{i,1} '/'];    
+    %eval(['!mkdir ' dest]);
+
+    
+cd(path1);
+
+eval( ['!cp ./*real.gc.tiff ' destination]);
+ 
+eval( ['!cp ./*im.gc.tiff ' destination]);
+ 
+  
+  %date_2016(i,:)=list_opt{i,1};
+  
+end
+
+clear path1 list_opt pathsate_opt date data ans i j
+
+
+% 2017
+
+
+pathsate_opt=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/2017/'];
+destination=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real/'];
+
+list_opt=list_opt_Russel2017;
+
+j=1;
+for i=1:length(list_opt);
+    path1=[pathsate_opt list_opt{i,1} '/'];
+%   path2=[pathsate list{i+1,1} '/'];
+    %d=dir(temp);
+    %dest=[destination list_opt{i,1} '/'];    
+    %eval(['!mkdir ' dest]);
+
+    
+cd(path1);
+
+eval( ['!cp ./*real.gc.tiff ' destination]);
+ 
+eval( ['!cp ./*im.gc.tiff ' destination]);
+ 
+%date_2017(i,:)=list_opt{i,1};
+  
+end
+
+clear path1 list_opt pathsate_opt date data ans i j
+
+%%%%%% Merge using gdal_merge.py (use in command line)
+
+cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real/
+
+!ls -1 *real.gc.tiff > real_tiff_list.txt
+
+!gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o ../Russel_real.tif ./*real.gc.tiff
+
+
+!ls -1 *im.gc.tiff > im_tiff_list.txt
+
+!gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o  ../Russel_im.tif ./*im.gc.tiff
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %%
 [Vel_Russel,R_russel]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_vel_filtered.tif');
 
@@ -1129,7 +1236,199 @@ geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glac
 % 
 % caxis([0 20])
 
+%%% Vel X (real) and Y (im)
+[VX_Russel,R_VX_russel]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_real.tif');
+VX_Russel(VX_Russel<-99998)=nan;VX_Russel(VX_Russel==0)=nan;
 
+[VY_Russel,R_VY_russel]=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_im.tif');
+VY_Russel(VY_Russel<-99998)=nan;VY_Russel(VY_Russel==0)=nan;
+
+
+list_opt1=[list_opt_Russel2015]
+list_opt2=[list_opt_Russel2016;list_opt_Russel2017];
+
+
+for i=1:size(list_opt1,1);
+   
+    a=list_opt1{i,1};
+    date1=a(1:6);
+    date2=a(8:end);
+
+    
+    Tbaseline=datenum(date2,'yymmdd')-datenum(date1,'yymmdd');
+
+    VX_Russel_m_yr(:,:,i)=(VX_Russel(:,:,i)*365/Tbaseline);
+    VY_Russel_m_yr(:,:,i)=(VY_Russel(:,:,i)*365/Tbaseline);
+
+end
+
+j=size(list_opt1,1)+1;
+for i=1:size(list_opt2,1);
+   
+    a=list_opt2{i,1};
+    date1=a(1:8);
+    date2=a(10:end);
+
+    
+    Tbaseline=datenum(date2,'yyyymmdd')-datenum(date1,'yyyymmdd');
+
+    VX_Russel_m_yr(:,:,j)=(VX_Russel(:,:,j)*365/Tbaseline);
+    VY_Russel_m_yr(:,:,j)=(VY_Russel(:,:,j)*365/Tbaseline);
+
+j=j+1;
+
+end
+
+
+figure; imagesc(xRussel(1150:1400),yRussel(1400:1750),Vel_Russel(1400:1750,1150:1400,93))
+hold on
+quiver(XRussel(1400:10:2200,1100:10:1650),YRussel(1400:10:2200,1100:10:1650),VX_Russel_m_yr(1400:10:2200,1100:10:1650,93),VY_Russel_m_yr(1400:10:2200,1100:10:1650,93).*(-1),'k')
+quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_m_yr(1400:20:2200,1100:20:1650,93).*(-1),'k')
+
+figure; imagesc(xRussel,yRussel,Vel_Russel(:,:,93))
+hold on
+caxis([0 200])
+quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_m_yr(1400:20:2200,1100:20:1650,93).*(-1),'k')
+
+
+XY_stream=stream2(XRussel,YRussel,VX_Russel_m_yr(:,:,93),VY_Russel_m_yr(:,:,93).*(-1),XRussel(1400:50:2200,1100:50:1650),YRussel(1400:50:2200,1100:50:1650));
+
+
+
+
+
+%% VelX and Vel Y Filtered
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+!app setup canopy python-libs
+
+path_im_real=['/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real/'];
+
+for i=1:size(imtifflist,1)
+
+script_filt{i,1}=['float2dem.pl ' path_im_real imtifflist{i,1} ' ' imtifflist{i,1} '_temp.gc ' imtifflist{i,1} '.par'];
+
+end
+
+T = cell2table(script_filt);
+writetable(T,'Float_im.dat')
+
+j=1;
+for i=1:size(imtifflist,1)
+[s,width]=system(['grep width: ' imtifflist{i,1} '.par | cut -c23-26']);
+[s,lines]=system(['grep nlines: ' imtifflist{i,1} '.par | cut -c23-26']);
+
+script_filt_part2{j,1}=['gaussian_filter.py ' imtifflist{i,1} '_temp.gc float32 ' num2str(width) ' ' num2str(lines) ' ' imtifflist{i,1} '_mag_Fil.gc -w 10 -fmax 0.3'];
+j=j+1;
+script_filt_part2{j,1}=['dust_filter.py ' imtifflist{i,1} '_mag_Fil.gc float32 ' num2str(width) ' ' num2str(lines) ' ' imtifflist{i,1} '_mag_DuFil.gc'];
+
+j=j+1;
+script_filt_part2{j,1}=['data2geotiff ' imtifflist{i,1} '.par ' imtifflist{i,1} '_mag_DuFil.gc 2 ' imtifflist{i,1} '_mag_DuFil.tiff'];
+
+j=j+1;
+
+clear s width lines
+end
+
+
+T2 = cell2table(script_filt_part2);
+writetable(T2,'Filter_im.dat','Delimiter','none')
+
+
+for i=1:size(realtifflist,1)
+
+script_filt_real{i,1}=['float2dem.pl ' path_im_real realtifflist{i,1} ' ' realtifflist{i,1} '_temp.gc ' realtifflist{i,1} '.par'];
+
+end
+
+Treal = cell2table(script_filt_real);
+writetable(Treal,'Float_real.dat')
+
+%%%%
+cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_im_filter
+
+!ls -1 *coffsN_im.gc.tiff_mag_DuFil.tiff > Russel_VelY_filtered_list.txt
+
+!gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o ../Russel_VelY_filtered.tif ./*coffsN_im.gc.tiff_mag_DuFil.tiff
+
+cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_real_filter
+
+!ls -1 *coffsN_real.gc.tiff_mag_DuFil.tiff > Russel_VelX_filtered_list.txt
+
+!gdal_merge.py -n -99999 -a_nodata -99999 -separate -of GTiff -o  ../Russel_VelX_filtered.tif ./*coffsN_real.gc.tiff_mag_DuFil.tiff
+
+%%%%
+
+cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered
+
+VY_Russel_filtered=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_VelY_filtered.tif');
+VX_Russel_filtered=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_VelX_filtered.tif');
+
+
+%%%%%%%%
+
+list_opt1=[list_opt_Russel2015];
+list_opt2=[list_opt_Russel2016;list_opt_Russel2017];
+
+
+for i=1:size(list_opt1,1);
+   
+    a=list_opt1{i,1};
+    date1=a(1:6);
+    date2=a(8:end);
+
+    
+    Tbaseline=datenum(date2,'yymmdd')-datenum(date1,'yymmdd');
+
+    VX_Russel_filtered_m_yr(:,:,i)=(VX_Russel_filtered(:,:,i)*365/Tbaseline);
+    VY_Russel_filtered_m_yr(:,:,i)=(VY_Russel_filtered(:,:,i)*365/Tbaseline);
+
+end
+
+j=size(list_opt1,1)+1;
+for i=1:size(list_opt2,1);
+   
+    a=list_opt2{i,1};
+    date1=a(1:8);
+    date2=a(10:end);
+
+    
+    Tbaseline=datenum(date2,'yyyymmdd')-datenum(date1,'yyyymmdd');
+
+    VX_Russel_filtered_m_yr(:,:,j)=(VX_Russel_filtered(:,:,j)*365/Tbaseline);
+    VY_Russel_filtered_m_yr(:,:,j)=(VY_Russel_filtered(:,:,j)*365/Tbaseline);
+
+j=j+1;
+
+end
+
+VX_Russel_filtered(VX_Russel_filtered<-99998)=nan;VX_Russel_filtered(VX_Russel_filtered==0)=nan;
+VY_Russel_filtered(VY_Russel_filtered<-99998)=nan;VY_Russel_filtered(VY_Russel_filtered==0)=nan;
+
+
+
+figure; imagesc(xRussel(1150:1400),yRussel(1400:1750),Vel_Russel(1400:1750,1150:1400,92))
+hold on
+quiver(XRussel(1400:10:2200,1100:10:1650),YRussel(1400:10:2200,1100:10:1650),VX_Russel_m_yr(1400:10:2200,1100:10:1650,92),VY_Russel_m_yr(1400:10:2200,1100:10:1650,92).*(-1),'k')
+quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_m_yr(1400:20:2200,1100:20:1650,93).*(-1),'k')
+
+% figure; imagesc(xRussel,yRussel,Vel_Russel(:,:,93))
+% hold on
+% caxis([0 200])
+% quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_m_yr(1400:20:2200,1100:20:1650,93).*(-1),'k')
+% 
+% 
+% XY_stream=stream2(XRussel,YRussel,VX_Russel_m_yr(:,:,93),VY_Russel_m_yr(:,:,93).*(-1),XRussel(1400:50:2200,1100:50:1650),YRussel(1400:50:2200,1100:50:1650));
+
+
+
+figure; imagesc(xRussel(1150:1400),yRussel(1400:1750),Vel_Russel(1400:1750,1150:1400,92))
+hold on
+quiver(XRussel(1400:10:2200,1100:10:1650),YRussel(1400:10:2200,1100:10:1650),VX_Russel_filtered_m_yr(1400:10:2200,1100:10:1650,92),VY_Russel_filtered_m_yr(1400:10:2200,1100:10:1650,92).*(1),'k')
+quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_filtered_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_filtered_m_yr(1400:20:2200,1100:20:1650,93).*(-1),'k')
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 
 
@@ -1444,6 +1743,7 @@ Y_g4=extractfield(G4_prof,'Y');
 G5_prof=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/Glacier5_profile.shp');
 X_g5=extractfield(G5_prof,'X');
 Y_g5=extractfield(G5_prof,'Y');
+
 
 V=Vel_Russel; V=movmean(V,10,'omitnan');
 V_mean=nanmean(V,3);
@@ -2289,7 +2589,26 @@ Bed_GRIS=ncread('/nfs/a59/eeagdl/DATABASE/GREENLAND/BedMachine_V3/BedMachineGree
 
 
 %% Flux gates per elevation:
+%%%%%%%%%%%%%%%
+%%% Straight line gates
+IFlux_g600_SLine=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_600m_SLine_pts.shp');
+X_g600_SLine=extractfield(IFlux_g600_SLine,'X');
+Y_g600_SLine=extractfield(IFlux_g600_SLine,'Y');
 
+IFlux_g700_SLine=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_700m_SLine_pts.shp');
+X_g700_SLine=extractfield(IFlux_g700_SLine,'X');
+Y_g700_SLine=extractfield(IFlux_g700_SLine,'Y');
+
+IFlux_g800_SLine=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_800m_SLine_pts.shp');
+X_g800_SLine=extractfield(IFlux_g800_SLine,'X');
+Y_g800_SLine=extractfield(IFlux_g800_SLine,'Y');
+
+IFlux_g900_SLine=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_900m_SLine_pts.shp');
+X_g900_SLine=extractfield(IFlux_g900_SLine,'X');
+Y_g900_SLine=extractfield(IFlux_g900_SLine,'Y');
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 IFlux_g600=shaperead('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Profiles/IFlux_gate_600m_pts.shp');
 X_g600=extractfield(IFlux_g600,'X');
 Y_g600=extractfield(IFlux_g600,'Y');
@@ -2354,6 +2673,17 @@ Bed_800=profile_ext_mean(X_g800,Y_g800,Bed_GRIS,R_bed,5);
 Bed_850=profile_ext_mean(X_g850,Y_g850,Bed_GRIS,R_bed,5);
 Bed_900=profile_ext_mean(X_g900,Y_g900,Bed_GRIS,R_bed,5);
 
+%%% Bed and Elevation for the Slines:
+
+Elev_600_SLine=profile_ext_mean_size_def(X_g600_SLine,Y_g600_SLine,gimp,Rgimp,5,size(X_g600_SLine,2));
+Elev_700_SLine=profile_ext_mean_size_def(X_g700_SLine,Y_g700_SLine,gimp,Rgimp,5,size(X_g700_SLine,2));
+Elev_800_SLine=profile_ext_mean_size_def(X_g800_SLine,Y_g800_SLine,gimp,Rgimp,5,size(X_g800_SLine,2));
+Elev_900_SLine=profile_ext_mean_size_def(X_g900_SLine,Y_g900_SLine,gimp,Rgimp,5,size(X_g900_SLine,2));
+
+Bed_600_SLine=profile_ext_mean_size_def(X_g600_SLine,Y_g600_SLine,Bed_GRIS,R_bed,5,size(X_g600_SLine,2));
+Bed_700_SLine=profile_ext_mean_size_def(X_g700_SLine,Y_g700_SLine,Bed_GRIS,R_bed,5,size(X_g700_SLine,2));
+Bed_800_SLine=profile_ext_mean_size_def(X_g800_SLine,Y_g800_SLine,Bed_GRIS,R_bed,5,size(X_g800_SLine,2));
+Bed_900_SLine=profile_ext_mean_size_def(X_g900_SLine,Y_g900_SLine,Bed_GRIS,R_bed,5,size(X_g900_SLine,2));
 
 
 % 2455
@@ -2385,6 +2715,25 @@ dist_900=(86318/(size(X_g900,2)))*-7635:(86318/(size(X_g900,2)-1)):(86318/(size(
 % dist_800=98713;
 % dist_850=67725;
 % dist_900=86318;
+
+
+
+%%%%%%%%%%%5 Distance along the SLine gates 
+
+dist_600_SLine=0:(66076.4/(size(X_g600_SLine,2)-1)):66076.4;
+
+dist_700_SLine=0:(64046.2/(size(X_g700_SLine,2)-1)):64046.2;
+
+dist_800_SLine=0:(61306.1/(size(X_g800_SLine,2)-1)):61306.1;
+
+dist_900_SLine=0:(56967.7/(size(X_g900_SLine,2)-1)):56967.7;
+
+% dist_600_SLine=66076.4;
+% dist_700_SLine=64046.2;
+% dist_800_SLine=61306.1;
+% dist_900_SLine=56967.7;
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 plot(dist_600,Elev_600);hold on;
 plot(dist_650,Elev_650);
 plot(dist_700,Elev_700);
@@ -2412,15 +2761,6 @@ Vel_winter_800=profile_ext_mean(X_g800,Y_g800,winter_Russel,R_russel,5);
 Vel_winter_850=profile_ext_mean(X_g850,Y_g850,winter_Russel,R_russel,5);
 Vel_winter_900=profile_ext_mean(X_g900,Y_g900,winter_Russel,R_russel,5);
 
-plot(dist_600,Vel_winter_600);hold on;
-plot(dist_650,Vel_winter_650);
-plot(dist_700,Vel_winter_700);
-plot(dist_750,Vel_winter_750);
-plot(dist_800,Vel_winter_800);
-plot(dist_850,Vel_winter_850);
-plot(dist_900,Vel_winter_900);
-
-
 Vel_summer_600=profile_ext_mean(X_g600,Y_g600,summer_Russel,R_russel,5);
 Vel_summer_650=profile_ext_mean(X_g650,Y_g650,summer_Russel,R_russel,5);
 Vel_summer_700=profile_ext_mean(X_g700,Y_g700,summer_Russel,R_russel,5);
@@ -2429,6 +2769,14 @@ Vel_summer_800=profile_ext_mean(X_g800,Y_g800,summer_Russel,R_russel,5);
 Vel_summer_850=profile_ext_mean(X_g850,Y_g850,summer_Russel,R_russel,5);
 Vel_summer_900=profile_ext_mean(X_g900,Y_g900,summer_Russel,R_russel,5);
 
+plot(dist_600,Vel_winter_600);hold on;
+plot(dist_650,Vel_winter_650);
+plot(dist_700,Vel_winter_700);
+plot(dist_750,Vel_winter_750);
+plot(dist_800,Vel_winter_800);
+plot(dist_850,Vel_winter_850);
+plot(dist_900,Vel_winter_900);
+
 plot(dist_600,Vel_summer_600);hold on;
 plot(dist_650,Vel_summer_650);
 plot(dist_700,Vel_summer_700);
@@ -2436,6 +2784,30 @@ plot(dist_750,Vel_summer_750);
 plot(dist_800,Vel_summer_800);
 plot(dist_850,Vel_summer_850);
 plot(dist_900,Vel_summer_900);
+
+
+
+%%%%%% Sline 
+Vel_winter_600_SLine=profile_ext_mean_size_def(X_g600_SLine,Y_g600_SLine,winter_Russel,R_russel,5,size(X_g600_SLine,2));
+Vel_winter_700_SLine=profile_ext_mean_size_def(X_g700_SLine,Y_g700_SLine,winter_Russel,R_russel,5,size(X_g700_SLine,2));
+Vel_winter_800_SLine=profile_ext_mean_size_def(X_g800_SLine,Y_g800_SLine,winter_Russel,R_russel,5,size(X_g800_SLine,2));
+Vel_winter_900_SLine=profile_ext_mean_size_def(X_g900_SLine,Y_g900_SLine,winter_Russel,R_russel,5,size(X_g900_SLine,2));
+
+Vel_summer_600_SLine=profile_ext_mean_size_def(X_g600_SLine,Y_g600_SLine,summer_Russel,R_russel,5,size(X_g600_SLine,2));
+Vel_summer_700_SLine=profile_ext_mean_size_def(X_g700_SLine,Y_g700_SLine,summer_Russel,R_russel,5,size(X_g700_SLine,2));
+Vel_summer_800_SLine=profile_ext_mean_size_def(X_g800_SLine,Y_g800_SLine,summer_Russel,R_russel,5,size(X_g800_SLine,2));
+Vel_summer_900_SLine=profile_ext_mean_size_def(X_g900_SLine,Y_g900_SLine,summer_Russel,R_russel,5,size(X_g900_SLine,2));
+
+plot(dist_600_SLine,Vel_winter_600_SLine);hold on;
+plot(dist_700_SLine,Vel_winter_700_SLine);
+plot(dist_800_SLine,Vel_winter_800_SLine);
+plot(dist_900_SLine,Vel_winter_900_SLine);
+
+plot(dist_600_SLine,Vel_summer_600_SLine);hold on;
+plot(dist_700_SLine,Vel_summer_700_SLine);
+plot(dist_800_SLine,Vel_summer_800_SLine);
+plot(dist_900_SLine,Vel_summer_900_SLine);
+
 
 
 % Interpolating the IB to GIMP resolution and transform to GAMMA format
@@ -2598,7 +2970,6 @@ for i=1:25
 end
 
 
-
 % Mean velocity every 100m:
 
 for i=1:25
@@ -2705,10 +3076,10 @@ end
 
 cum_Flux_600=nansum(Flux_600(1,:));
 cum_Flux_650=nansum(Flux_650(1,:));
-cum_Flux_700=nansum(Flux_800(1,:));
-cum_Flux_750=nansum(Flux_850(1,:));
-cum_Flux_800=nansum(Flux_700(1,:));
-cum_Flux_850=nansum(Flux_750(1,:));
+cum_Flux_700=nansum(Flux_700(1,:));
+cum_Flux_750=nansum(Flux_750(1,:));
+cum_Flux_800=nansum(Flux_800(1,:));
+cum_Flux_850=nansum(Flux_850(1,:));
 cum_Flux_900=nansum(Flux_900(1,:));
 
 for i=2:25
@@ -2745,9 +3116,297 @@ area(dist_600(1:100:end-99),fillgaps(Thick_600(1:100:end-99,1))),Flux_grid)
 Flux_grid=griddata(dist_600(1:100:end-99),fillgaps(Thick_600(1:100:end-99,1)),Flux_600(1,:),dist_mesh,Thick_mesh);
 
 Thick_mesh=Thick_mesh';
+%% All calculations using the straight gates
+
+window=[7 7];
+%cs_z_stack_median20x20=movmedian(cs_z_stack,window,'omitnan');
+
+addpath('/nfs/a59/cryosat/output/py10ts/scripts/')
+
+for i=1:87
+cs_z_stack_median20x20(:,:,i) = nanmedfilt2(cs_z_stack(:,:,i),window);
+end
 
 
-%save('-v7.3','/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_23_05_2018.mat')
+% figure; h = imagesc(test); set(h,'alphadata',~isnan(test))
+% axis xy
+
+
+
+for i=1: size(cs_z_stack,3)
+Z_600_SLine(:,i)=profile_ext_mean_size_def(X_g600_SLine,Y_g600_SLine,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1,size(X_g600_SLine,2));
+Z_700_SLine(:,i)=profile_ext_mean_size_def(X_g700_SLine,Y_g700_SLine,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1,size(X_g700_SLine,2));
+Z_800_SLine(:,i)=profile_ext_mean_size_def(X_g800_SLine,Y_g800_SLine,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1,size(X_g800_SLine,2));
+Z_900_SLine(:,i)=profile_ext_mean_size_def(X_g900_SLine,Y_g900_SLine,flipud(cs_z_stack_median20x20(:,:,i)),Rcryo,1,size(X_g900_SLine,2));
+end
+
+%  for i=1: size(cs_z_stack,3)
+% Z_600(:,i)=profile_ext_mean(X_g600,Y_g600,cs_z_stack(:,:,i),Rcryo,20);
+% Z_650(:,i)=profile_ext_mean(X_g650,Y_g650,cs_z_stack(:,:,i),Rcryo,20);
+% Z_700(:,i)=profile_ext_mean(X_g700,Y_g700,cs_z_stack(:,:,i),Rcryo,20);
+% Z_750(:,i)=profile_ext_mean(X_g750,Y_g750,cs_z_stack(:,:,i),Rcryo,20);
+% Z_800(:,i)=profile_ext_mean(X_g800,Y_g800,cs_z_stack(:,:,i),Rcryo,20);
+% Z_850(:,i)=profile_ext_mean(X_g850,Y_g850,cs_z_stack(:,:,i),Rcryo,20);
+% Z_900(:,i)=profile_ext_mean(X_g900,Y_g900,cs_z_stack(:,:,i),Rcryo,20);
+% end
+
+mapshow(cs_z_stack_median20x20(:,:,3),Rcryo, 'DisplayType','surface');
+time_cryo = datenum([Y(:), M(:), ones(numel(Y),1)]);
+
+
+for i=1:size(Z_600_SLine,2)
+Thick_600_SLine(:,i)=Z_600_SLine(:,i)-Bed_600_SLine;
+Thick_700_SLine(:,i)=Z_700_SLine(:,i)-Bed_700_SLine;
+Thick_800_SLine(:,i)=Z_800_SLine(:,i)-Bed_800_SLine;
+Thick_900_SLine(:,i)=Z_900_SLine(:,i)-Bed_900_SLine;
+
+end
+
+% % Calculate the area under the curve:
+% for i=1:size(Z_600,2)
+% Area_600(:,i)=trapz(dist_600(1,:)',fillgaps(Thick_600(:,i)));
+% Area_650(:,i)=trapz(dist_650(1,:)',fillgaps(Thick_650(:,i)));
+% 
+% Area_700(:,i)=trapz(dist_700(1,:)',fillgaps(Thick_700(:,i)));
+% Area_750(:,i)=trapz(dist_750(1,:)',fillgaps(Thick_750(:,i)));
+% 
+% Area_800(:,i)=trapz(dist_800(1,:)',fillgaps(Thick_800(:,i)));
+% Area_850(:,i)=trapz(dist_850(1,:)',fillgaps(Thick_850(:,i)));
+% 
+% Area_900(:,i)=trapz(dist_900(1,:)',fillgaps(Thick_900(:,i)));
+% 
+% end
+
+% Calculate the area under the curve every 200m:
+
+for i=1:size(Z_600_SLine,2)
+ 
+ try
+     k=1;
+for j=1:2:size(Thick_600_SLine,1)
+Area_600_SLine(i,k)=trapz(dist_600_SLine(1,j:j+1)',fillgaps(Thick_600_SLine(j:j+1,i)));
+k=k+1;
+end
+ end
+
+try
+  k=1;    
+for j=1:2:size(Thick_700_SLine,1)
+Area_700_SLine(i,k)=trapz(dist_700_SLine(1,j:j+1)',fillgaps(Thick_700_SLine(j:j+1,i)));
+k=k+1;
+end
+end
+
+
+try
+  k=1;   
+for j=1:2:size(Thick_800_SLine,1)
+Area_800_SLine(i,k)=trapz(dist_800_SLine(1,j:j+1)',fillgaps(Thick_800_SLine(j:j+1,i)));
+k=k+1;
+end
+end
+
+
+try
+  k=1;   
+for j=1:2:size(Thick_900_SLine,1)
+Area_900_SLine(i,k)=trapz(dist_900_SLine(1,j:j+1)',fillgaps(Thick_900_SLine(j:j+1,i)));
+k=k+1;
+end
+end
+
+end
+
+
+%%%%  Gate angle variation along the glaciers:
+%
+% alpha=arctan[(y2-y1)/x2-x1)];  %angle between the gate in the cartesian plan
+% 
+% beta= arctan(Velx/Vely);  % Velocity angle in the cartesian plan
+%
+% theta= (alpha - beta); % angle between the Velocity vector and the gate.
+%
+% atan2d -> https://uk.mathworks.com/help/matlab/ref/atan2d.html
+%
+% 
+
+% gate angles:
+
+for i=1:size(Y_g600_SLine,2)-1
+angle_g600_Sline(i)=atan2d(Y_g600_SLine(i+1)-Y_g600_SLine(i),X_g600_SLine(i+1)-X_g600_SLine(i));
+end
+
+for i=1:size(Y_g700_SLine,2)-1
+angle_g700_Sline(i)=atan2d(Y_g700_SLine(i+1)-Y_g700_SLine(i),X_g700_SLine(i+1)-X_g700_SLine(i));
+end
+
+for i=1:size(Y_g800_SLine,2)-1
+angle_g800_Sline(i)=atan2d(Y_g800_SLine(i+1)-Y_g800_SLine(i),X_g800_SLine(i+1)-X_g800_SLine(i));
+end
+
+for i=1:size(Y_g900_SLine,2)-1
+angle_g900_Sline(i)=atan2d(Y_g900_SLine(i+1)-Y_g900_SLine(i),X_g900_SLine(i+1)-X_g900_SLine(i));
+end
+
+% Plot the gates and the angles
+
+figure;
+scatter(X_g600_SLine, Y_g600_SLine,5,[angle_g600_Sline,angle_g600_Sline(end)],'filled'); hold on;
+scatter(X_g700_SLine, Y_g700_SLine,5,[angle_g700_Sline,angle_g700_Sline(end)],'filled')
+scatter(X_g800_SLine, Y_g800_SLine,5,[angle_g800_Sline,angle_g800_Sline(end)],'filled')
+scatter(X_g900_SLine, Y_g900_SLine,5,[angle_g900_Sline,angle_g900_Sline(end)],'filled')
+c_degree=colorbar;
+caxis([70 170])
+ylabel(c_degree,'gate angle (degrees)','fontsize',12,'fontweight','b')
+
+% window2=[7 7];
+% 
+% for i=1:93
+% 
+%  VX_Russel_MedFilt(:,:,i)=nanmedfilt2(VX_Russel_m_yr(:,:,i),window2);
+%  VY_Russel_MedFilt(:,:,i)=nanmedfilt2(VY_Russel_m_yr(:,:,i),window2);
+% 
+% end
+ 
+for i=1:93
+    
+  VelX_600_SLine(:,i)=profile_ext_mean(X_g600_SLine(:),Y_g600_SLine(:),VX_Russel_filtered_m_yr(:,:,i),R_russel,7);
+  VelY_600_SLine(:,i)=profile_ext_mean(X_g600_SLine,Y_g600_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  
+  VelX_700_SLine(:,i)=profile_ext_mean(X_g700_SLine,Y_g700_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelY_700_SLine(:,i)=profile_ext_mean(X_g700_SLine,Y_g700_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+
+  VelX_800_SLine(:,i)=profile_ext_mean(X_g800_SLine,Y_g800_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelY_800_SLine(:,i)=profile_ext_mean(X_g800_SLine,Y_g800_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+
+  VelX_900_SLine(:,i)=profile_ext_mean(X_g900_SLine,Y_g900_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelY_900_SLine(:,i)=profile_ext_mean(X_g900_SLine,Y_g900_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  
+end
+
+size(X_g600_SLine)
+plot(VelX_600_SLine(:,93))
+
+figure; imagesc((nansum(cat(3,VX_Russel_filtered(:,:,93).^2,VY_Russel_filtered(:,:,93).^2),3)).^0.5)
+
+figure; plot((nansum(cat(2,VelX_600_SLine(:,93).^2,VelY_600_SLine(:,93).^2),2)).^0.5)
+
+% Extract MONTHLY Vel profile (along the gate):
+
+j=1;
+for i=1:25
+  Vel_600_SLine(:,i)=profile_ext_mean_size_def(X_g600_SLine,Y_g600_SLine,Vel_monthly_mean(:,:,i),R_russel,5,size(X_g600_SLine,2));  
+  
+  Vel_700_SLine(:,i)=profile_ext_mean_size_def(X_g700_SLine,Y_g700_SLine,Vel_monthly_mean(:,:,i),R_russel,5,size(X_g700_SLine,2));  
+  
+  Vel_800_SLine(:,i)=profile_ext_mean_size_def(X_g800_SLine,Y_g800_SLine,Vel_monthly_mean(:,:,i),R_russel,5,size(X_g800_SLine,2));  
+
+  Vel_900_SLine(:,i)=profile_ext_mean_size_def(X_g900_SLine,Y_g900_SLine,Vel_monthly_mean(:,:,i),R_russel,5,size(X_g900_SLine,2));  
+
+end
+
+
+
+% Mean velocity every 200m:
+
+for i=1:25
+ 
+ try
+     k=1;
+for j=1:2:size(Vel_600_SLine,1)
+Vel_600_mean_SLine(i,k)=nanmean(Vel_600_SLine(j:j+1,i));
+k=k+1;
+end
+ end
+ 
+
+try
+     k=1;
+for j=1:2:size(Vel_700_SLine,1)
+Vel_700_mean_SLine(i,k)=nanmean(Vel_700_SLine(j:j+1,i));
+k=k+1;
+end
+ end
+
+
+try
+     k=1;
+for j=1:2:size(Vel_800_SLine,1)
+Vel_800_mean_SLine(i,k)=nanmean(Vel_800_SLine(j:j+1,i));
+k=k+1;
+end
+end
+ 
+
+try
+     k=1;
+for j=1:2:size(Vel_900_SLine,1)
+Vel_900_mean_SLine(i,k)=nanmean(Vel_900_SLine(j:j+1,i));
+k=k+1;
+end
+end
+ 
+end
+
+
+
+%Flux calculation (Dec_2015 to Dec_2017) j=63 => Dec_2015
+
+j=63;
+for i=1:25
+Flux_600_SLine(i,:)=(Area_600_SLine(j,:).*Vel_600_mean_SLine(i,:));
+
+Flux_700_SLine(i,:)=(Area_700_SLine(j,:).*Vel_700_mean_SLine(i,:));
+
+Flux_800_SLine(i,:)=(Area_800_SLine(j,:).*Vel_800_mean_SLine(i,:));
+
+Flux_900_SLine(i,:)=(Area_900_SLine(j,:).*Vel_900_mean_SLine(i,:));
+
+j=j+1;
+end
+
+
+
+% Monthly Discharge (Dec_2015 to Dec_2017)
+
+for i=1:25
+Flux_600_monthly_SLine(i)=nansum(Flux_600_SLine(i,:));
+
+Flux_700_monthly_SLine(i)=nansum(Flux_700_SLine(i,:));
+
+Flux_800_monthly_SLine(i)=nansum(Flux_800_SLine(i,:));
+
+Flux_900_monthly_SLine(i)=nansum(Flux_900_SLine(i,:));
+
+
+end
+
+
+% Cumulative discharge (Jan_2016 to Dec_2017)
+
+cum_Flux_600_SLine=nansum(Flux_600_SLine(1,:));
+cum_Flux_700_SLine=nansum(Flux_700_SLine(1,:));
+cum_Flux_800_SLine=nansum(Flux_700_SLine(1,:));
+cum_Flux_900_SLine=nansum(Flux_900_SLine(1,:));
+
+for i=2:25
+cum_Flux_600_SLine(i)=[cum_Flux_600_SLine(i-1)+nansum(Flux_600_SLine(i,:))];
+
+cum_Flux_700_SLine(i)=[cum_Flux_700_SLine(i-1)+nansum(Flux_700_SLine(i,:))];
+
+cum_Flux_800_SLine(i)=[cum_Flux_800_SLine(i-1)+nansum(Flux_800_SLine(i,:))];
+
+cum_Flux_900_SLine(i)=[cum_Flux_900_SLine(i-1)+nansum(Flux_900_SLine(i,:))];
+
+
+end
+
+
+
+%save('-v7.3','/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Russel_12_06_2018.mat')
+
+
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
 % % Glacier 1
