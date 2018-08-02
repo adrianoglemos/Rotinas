@@ -612,6 +612,8 @@ for i=1:length(d_opt);
 end
 clear i j name
 
+list_opt=cellstr(list_opt);
+
 for i=1:size(list_opt,1);
  
     path1=[list_opt(i,:) '/'];
@@ -1360,8 +1362,11 @@ cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_I
 
 cd /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered
 
-VY_Russel_filtered=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_VelY_filtered.tif');
-VX_Russel_filtered=geotiffread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_VelX_filtered.tif');
+VY_Russel_filtered=imread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_VelY_filtered.tif');
+VX_Russel_filtered=imread('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Stack_Im_Real_Filtered/Russel_VelX_filtered.tif');
+
+VX_Russel_filtered(VX_Russel_filtered<-99998)=nan;%VX_Russel_filtered(VX_Russel_filtered==0)=nan;
+VY_Russel_filtered(VY_Russel_filtered<-99999)=nan;%VY_Russel_filtered(VY_Russel_filtered==0)=nan;
 
 
 %%%%%%%%
@@ -1379,8 +1384,8 @@ for i=1:size(list_opt1,1);
     
     Tbaseline=datenum(date2,'yymmdd')-datenum(date1,'yymmdd');
 
-    VX_Russel_filtered_m_yr(:,:,i)=(VX_Russel_filtered(:,:,i)*365/Tbaseline);
-    VY_Russel_filtered_m_yr(:,:,i)=(VY_Russel_filtered(:,:,i)*365/Tbaseline);
+    VX_Russel_filtered_m_yr(:,:,i)=(VX_Russel_filtered(:,:,i).*(365/Tbaseline));
+    VY_Russel_filtered_m_yr(:,:,i)=(VY_Russel_filtered(:,:,i).*(365/Tbaseline));
 
 end
 
@@ -1394,15 +1399,13 @@ for i=1:size(list_opt2,1);
     
     Tbaseline=datenum(date2,'yyyymmdd')-datenum(date1,'yyyymmdd');
 
-    VX_Russel_filtered_m_yr(:,:,j)=(VX_Russel_filtered(:,:,j)*365/Tbaseline);
-    VY_Russel_filtered_m_yr(:,:,j)=(VY_Russel_filtered(:,:,j)*365/Tbaseline);
+    VX_Russel_filtered_m_yr(:,:,j)=(VX_Russel_filtered(:,:,j).*(365/Tbaseline));
+    VY_Russel_filtered_m_yr(:,:,j)=(VY_Russel_filtered(:,:,j).*(365/Tbaseline));
 
 j=j+1;
 
 end
 
-VX_Russel_filtered(VX_Russel_filtered<-99998)=nan;VX_Russel_filtered(VX_Russel_filtered==0)=nan;
-VY_Russel_filtered(VY_Russel_filtered<-99998)=nan;VY_Russel_filtered(VY_Russel_filtered==0)=nan;
 
 
 
@@ -1424,7 +1427,7 @@ quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_
 figure; imagesc(xRussel(1150:1400),yRussel(1400:1750),Vel_Russel(1400:1750,1150:1400,92))
 hold on
 quiver(XRussel(1400:10:2200,1100:10:1650),YRussel(1400:10:2200,1100:10:1650),VX_Russel_filtered_m_yr(1400:10:2200,1100:10:1650,92),VY_Russel_filtered_m_yr(1400:10:2200,1100:10:1650,92).*(1),'k')
-quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_filtered_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_filtered_m_yr(1400:20:2200,1100:20:1650,93).*(-1),'k')
+quiver(XRussel(1400:20:2200,1100:20:1650),YRussel(1400:20:2200,1100:20:1650),VX_Russel_filtered_m_yr(1400:20:2200,1100:20:1650,93),VY_Russel_filtered_m_yr(1400:20:2200,1100:20:1650,93).*(-0),'k')
 
 
 
@@ -1456,7 +1459,7 @@ winter_ind_2017=find(date_Russel_num>=datenum('20170808','yyyymmdd') & date_Russ
 
 
 
-% Seasonal mean
+% Seasonal mean and error
 
 summer_2015=nanmean(Vel_Russel(:,:,summer_ind_2015),3);
 summer_2016=nanmean(Vel_Russel(:,:,summer_ind_2016),3);
@@ -1469,17 +1472,40 @@ winter_2015=nanmean(Vel_Russel(:,:,winter_ind_2015),3);
 winter_2016=nanmean(Vel_Russel(:,:,winter_ind_2016),3);
 winter_2017=nanmean(Vel_Russel(:,:,winter_ind_2017),3);
 
-winter_Russel=mean(cat(3,winter_2015,winter_2016,winter_2017),3);
+winter_Russel=mean(cat(3,winter_2016,winter_2017),3);
 %winter_Russel=movmean(winter_Russel,10,'omitnan');
 winter_Russel(winter_Russel<29)=nan;
 
 
 summer_minus_winter_Russel=summer_Russel-winter_Russel;
+summer_over_winter_Russel=((summer_Russel./winter_Russel)-1)*100;
 %summer_minus_winter_Russel=movmean(summer_minus_winter_Russel,10,'omitnan');
 
 geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Summer_Russel.tif', summer_Russel, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
 geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Winter_Russel.tif', winter_Russel, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
 geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Summer_minus_winter_Russel.tif',summer_minus_winter_Russel, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
+geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Summer_over_winter_Russel_percentage.tif',summer_over_winter_Russel, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
+
+
+% Seasonal error
+
+%summer
+Noise_Russel_SummerMean=nanmean(Noise_Russel(:,:,[summer_ind_2016;summer_ind_2017]),3);
+
+%winter
+Noise_Russel_WinterMean=nanmean(Noise_Russel(:,:,[winter_ind_2016;winter_ind_2017]),3);
+
+Noise_Russel_percentageSummer=(Noise_Russel_SummerMean./summer_Russel).*100;
+Noise_Russel_percentageWinter=(Noise_Russel_WinterMean./winter_Russel).*100;
+
+geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Noise_Russel_percentageSummer.tif', Noise_Russel_percentageSummer, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
+geotiffwrite('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Noise_Russel_percentageWinter.tif', Noise_Russel_percentageWinter, R_russel,'GeoKeyDirectoryTag',info_Russel.GeoTIFFTags.GeoKeyDirectoryTag);
+
+
+
+
+
+
 
 
 
@@ -1768,18 +1794,18 @@ V_g3=profile_ext(X_g3,Y_g3,V_mean,R_russel);
 V_g4=profile_ext(X_g4,Y_g4,V_mean,R_russel);
 V_g5=profile_ext(X_g5,Y_g5,V_mean,R_russel);
 
-V_g1summer=profile_ext(X_g1,Y_g1,summer_2016,R_russel);
-V_g2summer=profile_ext(X_g2,Y_g2,summer_2016,R_russel);
-V_g3summer=profile_ext(X_g3,Y_g3,summer_2016,R_russel);
-V_g4summer=profile_ext(X_g4,Y_g4,summer_2016,R_russel);
-V_g5summer=profile_ext(X_g5,Y_g5,summer_2016,R_russel);
+V_g1summer=profile_ext(X_g1,Y_g1,summer_Russel,R_russel);
+V_g2summer=profile_ext(X_g2,Y_g2,summer_Russel,R_russel);
+V_g3summer=profile_ext(X_g3,Y_g3,summer_Russel,R_russel);
+V_g4summer=profile_ext(X_g4,Y_g4,summer_Russel,R_russel);
+V_g5summer=profile_ext(X_g5,Y_g5,summer_Russel,R_russel);
 
 
-V_g1winter=profile_ext(X_g1,Y_g1,winter_2016,R_russel);
-V_g2winter=profile_ext(X_g2,Y_g2,winter_2016,R_russel);
-V_g3winter=profile_ext(X_g3,Y_g3,winter_2016,R_russel);
-V_g4winter=profile_ext(X_g4,Y_g4,winter_2016,R_russel);
-V_g5winter=profile_ext(X_g5,Y_g5,winter_2016,R_russel);
+V_g1winter=profile_ext(X_g1,Y_g1,winter_Russel,R_russel);
+V_g2winter=profile_ext(X_g2,Y_g2,winter_Russel,R_russel);
+V_g3winter=profile_ext(X_g3,Y_g3,winter_Russel,R_russel);
+V_g4winter=profile_ext(X_g4,Y_g4,winter_Russel,R_russel);
+V_g5winter=profile_ext(X_g5,Y_g5,winter_Russel,R_russel);
 
 % for i=1:size(V,3)
 % V_g1(:,i)=profile_ext(X_g1,Y_g1,V(:,:,i),R_russel);
@@ -2541,11 +2567,14 @@ xlim([-250000 -50000])
 ylim([-2550000 -2350000])
 
 
+
+
 %%
 %%% Load Cryosat elevation change
 
 load('/nfs/a59/cryosat/output/py10ts/gis_smb_v2/cs_cumdz_stack_to0817.mat','cs_cumdz_stack','ts_midpt_sampling_vec','gridx','gridy','cs_z_stack');
 
+load('/nfs/a59/cryosat/output/py10ts/gis_dhdt/mats/model_filled_dhdt.mat','power_correct_dzdt_grc_vfilled_25kmsm_gr');
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % where:
@@ -3268,21 +3297,48 @@ ylabel(c_degree,'gate angle (degrees)','fontsize',12,'fontweight','b')
 % 
 % end
  
+window_vxy=[5 5];
+%cs_z_stack_median20x20=movmedian(cs_z_stack,window,'omitnan');
+
+addpath('/nfs/a59/cryosat/output/py10ts/scripts/')
+
+for i=1:93
+VX_Russel_filtered_m_yr_medianFilter(:,:,i) = nanmedfilt2(VX_Russel_filtered_m_yr(:,:,i),window_vxy);
+VY_Russel_filtered_m_yr_medianFilter(:,:,i) = nanmedfilt2(VY_Russel_filtered_m_yr(:,:,i),window_vxy);
+end
+
+
 for i=1:93
     
-  VelX_600_SLine(:,i)=profile_ext_mean(X_g600_SLine(:),Y_g600_SLine(:),VX_Russel_filtered_m_yr(:,:,i),R_russel,7);
-  VelY_600_SLine(:,i)=profile_ext_mean(X_g600_SLine,Y_g600_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelX_600_SLine_medFilter(:,i)=profile_ext(X_g600_SLine,Y_g600_SLine,VX_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);
+  VelY_600_SLine(:,i)=profile_ext(X_g600_SLine,Y_g600_SLine,VY_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
   
-  VelX_700_SLine(:,i)=profile_ext_mean(X_g700_SLine,Y_g700_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
-  VelY_700_SLine(:,i)=profile_ext_mean(X_g700_SLine,Y_g700_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelX_700_SLine(:,i)=profile_ext(X_g700_SLine,Y_g700_SLine,VX_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
+  VelY_700_SLine(:,i)=profile_ext(X_g700_SLine,Y_g700_SLine,VY_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
 
-  VelX_800_SLine(:,i)=profile_ext_mean(X_g800_SLine,Y_g800_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
-  VelY_800_SLine(:,i)=profile_ext_mean(X_g800_SLine,Y_g800_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelX_800_SLine(:,i)=profile_ext(X_g800_SLine,Y_g800_SLine,VX_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
+  VelY_800_SLine(:,i)=profile_ext(X_g800_SLine,Y_g800_SLine,VY_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
 
-  VelX_900_SLine(:,i)=profile_ext_mean(X_g900_SLine,Y_g900_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
-  VelY_900_SLine(:,i)=profile_ext_mean(X_g900_SLine,Y_g900_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+  VelX_900_SLine(:,i)=profile_ext(X_g900_SLine,Y_g900_SLine,VX_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
+  VelY_900_SLine(:,i)=profile_ext(X_g900_SLine,Y_g900_SLine,VY_Russel_filtered_m_yr_medianFilter(:,:,i),R_russel);  
   
 end
+% 
+% for i=1:93
+%     
+%   VelX_600_SLine(:,i)=profile_ext_mean(X_g600_SLine,Y_g600_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);
+%   VelY_600_SLine(:,i)=profile_ext_mean(X_g600_SLine,Y_g600_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+%   
+%   VelX_700_SLine(:,i)=profile_ext_mean(X_g700_SLine,Y_g700_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+%   VelY_700_SLine(:,i)=profile_ext_mean(X_g700_SLine,Y_g700_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+% 
+%   VelX_800_SLine(:,i)=profile_ext_mean(X_g800_SLine,Y_g800_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+%   VelY_800_SLine(:,i)=profile_ext_mean(X_g800_SLine,Y_g800_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+% 
+%   VelX_900_SLine(:,i)=profile_ext_mean(X_g900_SLine,Y_g900_SLine,VX_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+%   VelY_900_SLine(:,i)=profile_ext_mean(X_g900_SLine,Y_g900_SLine,VY_Russel_filtered_m_yr(:,:,i),R_russel,7);  
+%   
+% end
 
 size(X_g600_SLine)
 plot(VelX_600_SLine(:,93))
@@ -3291,7 +3347,345 @@ figure; imagesc((nansum(cat(3,VX_Russel_filtered(:,:,93).^2,VY_Russel_filtered(:
 
 figure; plot((nansum(cat(2,VelX_600_SLine(:,93).^2,VelY_600_SLine(:,93).^2),2)).^0.5)
 
-% Extract MONTHLY Vel profile (along the gate):
+% %%% Hannes email
+% with ice thickness H and velocity components U and V.
+% DIV = divergence(X,Y,H.*U,H.*V)
+
+addpath('/nfs/a59/cryosat/output/py10ts/scripts/')
+addpath(genpath('/nfs/a59/eeagdl/DATABASE/MATLAB/matlab_biblioteca/'))
+
+[VX_Russel_m_yr_monthly_mean,time_VX_monthly] = downsample_ts(VX_Russel_m_yr,date_Russel_num,'function','nanmean');
+[VY_Russel_m_yr_monthly_mean,time_VY_monthly] = downsample_ts(VY_Russel_m_yr,date_Russel_num,'function','nanmean');
+
+% removing months from 2015 but December: 
+VX_Russel_m_yr_monthly_mean(:,:,1:6)=[];
+VY_Russel_m_yr_monthly_mean(:,:,1:6)=[];
+
+time_VX_monthly(1:6)=[];
+time_VY_monthly(1:6)=[];
+
+% making the elevation a better resolution (bringing the elevation to the vel resolution: 100m)
+
+for i=1:size(cs_z_stack_median20x20,3);
+ cs_z_stack_median20x20_interp(:,:,i)= interp2(gridx,gridy,cs_z_stack_median20x20(:,:,i),XRussel,YRussel);
+end
+
+
+% making a coarse resolution of the Vel (taking to 5km resolution):
+
+xRussel_5km=xRussel(1):5000:xRussel(end);
+yRussel_5km=yRussel(1):5000:yRussel(end);
+[XRussel_5km,YRussel_5km]=meshgrid(xRussel_5km,yRussel_5km);
+
+for i=1:size(VY_Russel_m_yr,3);
+ VX_Russel_myr_interp(:,:,i)= interp2(XRussel,YRussel,VX_Russel_m_yr(:,:,i),XRussel_5km,YRussel_5km);
+ VY_Russel_myr_interp(:,:,i)= interp2(XRussel,YRussel,VY_Russel_m_yr(:,:,i),XRussel_5km,YRussel_5km);
+
+end
+
+for i=1:size(cs_z_stack_median20x20,3);
+ cs_z_stack_median20x20_interp(:,:,i)= interp2(gridx,gridy,cs_z_stack_median20x20(:,:,i),XRussel_5km,YRussel_5km);
+end
+
+
+%  Divergence
+
+
+%Summer & winter
+
+% summer: May - Aug
+% winter: Sep - April
+
+%summer_2016: 68:71
+%winter_2016/2017: 72:79
+%summer 2017: 80:83
+%winter2017: 84:end
+
+% 2016
+
+DIV_summer_2016 = divergence(XRussel_5km,YRussel_5km,nanmean(cs_z_stack_median20x20_interp(:,:,68:71),3).*nanmean(VX_Russel_myr_interp(:,:,6:9),3),nanmean(cs_z_stack_median20x20_interp(:,:,68:71),3).*nanmean(VY_Russel_myr_interp(:,:,6:9),3));
+
+DIV_winter_2016 = divergence(XRussel_5km,YRussel_5km,nanmean(cs_z_stack_median20x20_interp(:,:,72:79),3).*nanmean(VX_Russel_myr_interp(:,:,10:17),3),nanmean(cs_z_stack_median20x20_interp(:,:,72:79),3).*nanmean(VY_Russel_myr_interp(:,:,10:17),3));
+
+% 2017
+
+DIV_summer_2017 = divergence(XRussel_5km,YRussel_5km,nanmean(cs_z_stack_median20x20_interp(:,:,80:83),3).*nanmean(VX_Russel_myr_interp(:,:,18:21),3),nanmean(cs_z_stack_median20x20_interp(:,:,80:83),3).*nanmean(VY_Russel_myr_interp(:,:,18:21),3));
+
+DIV_winter_2017 = divergence(XRussel_5km,YRussel_5km,nanmean(cs_z_stack_median20x20_interp(:,:,84:end),3).*nanmean(VX_Russel_myr_interp(:,:,21:end),3),nanmean(cs_z_stack_median20x20_interp(:,:,84:end),3).*nanmean(VY_Russel_myr_interp(:,:,21:end),3));
+
+
+
+
+figure('PaperOrientation','portrait','position',[1 1 820 825])
+subplot(221)
+h=imagesc(xRussel_5km,yRussel_5km,DIV_summer_2016); tt=double(~isnan(DIV_summer_2016)); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Summer 2016','fontsize',14,'fontweight','b')
+colormap redbluecmap
+set(gca,'fontsize',12)
+
+%figure;
+subplot(222)
+h=imagesc(xRussel_5km,yRussel_5km,DIV_winter_2016); tt=double(~isnan(DIV_winter_2016)); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Winter 2016','fontsize',14,'fontweight','b')
+colormap redbluecmap
+cc=colorbar('location','south outside');
+ylabel(cc,'m yr^{-1}','fontsize',12,'fontweight','b')
+set(gca,'fontsize',12)
+
+%figure;
+subplot(223)
+h=imagesc(xRussel_5km,yRussel_5km,DIV_summer_2017); tt=double(~isnan(DIV_summer_2017)); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Summer 2017','fontsize',14,'fontweight','b')
+colormap redbluecmap
+set(gca,'fontsize',12)
+
+%figure;
+subplot(224)
+h=imagesc(xRussel_5km,yRussel_5km,DIV_winter_2017); tt=double(~isnan(DIV_winter_2017)); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Winter 2017','fontsize',14,'fontweight','b')
+colormap redbluecmap
+%colorbar('location','east outside')
+set(gca,'fontsize',12)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Divergence_Summer_Winter
+
+imagesc(nanmean(VX_Russel_myr_interp(15:50,18:40,10:17),3))
+
+
+
+%%% DIVERGE - Mean 2016 and 2017 - 100 m resolution
+
+cs_z_stack_median20x20_interp_summer= cat(3, cs_z_stack_median20x20_interp(:,:,68:71),cs_z_stack_median20x20_interp(:,:,80:83));
+cs_z_stack_median20x20_interp_winter= cat(3, cs_z_stack_median20x20_interp(:,:,72:79),cs_z_stack_median20x20_interp(:,:,84:end));
+
+VX_Russel_myr_interp_summer_100= cat(3, VX_Russel_m_yr(:,:,6:9), VX_Russel_m_yr(:,:,18:21));
+VX_Russel_myr_interp_winter_100= cat(3, VX_Russel_m_yr(:,:,10:17), VY_Russel_m_yr(:,:,21:end));
+
+VY_Russel_myr_interp_summer_100= cat(3, VY_Russel_m_yr(:,:,6:9), VY_Russel_m_yr(:,:,18:21));
+VY_Russel_myr_interp_winter_100= cat(3, VY_Russel_m_yr(:,:,10:17), VY_Russel_m_yr(:,:,21:end));
+
+
+
+DIV_summer_100 = divergence(XRussel,YRussel,nanmean(cs_z_stack_median20x20_interp_summer,3).*nanmean(VX_Russel_myr_interp_summer_100,3),nanmean(cs_z_stack_median20x20_interp_summer,3).*nanmean(VY_Russel_myr_interp_summer_100,3));
+
+DIV_winter_100 = divergence(XRussel,YRussel,nanmean(cs_z_stack_median20x20_interp_winter,3).*nanmean(VX_Russel_myr_interp_winter_100,3),nanmean(cs_z_stack_median20x20_interp_winter,3).*nanmean(VY_Russel_myr_interp_winter_100,3));
+
+DIV_summer_100_median=nanmedfilt2(DIV_summer_100,[21 21]);
+DIV_winter_100_median=nanmedfilt2(DIV_winter_100,[21 21]);
+
+
+
+figure('PaperOrientation','portrait','position',[1 1 1220 525])
+
+h1=subplot(141)
+h=imagesc(xRussel(1400:2300),yRussel(1000:2000),Vel_Russel_mean(1400:2300,1000:2000)); tt=double(~isnan(Vel_Russel_mean(1400:2300,1000:2000))); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([0 250]);
+title('Mean Velocity','fontsize',14,'fontweight','b')
+colormap(h1, 'jet');
+set(gca,'fontsize',12)
+cc1=colorbar('location','west outside');
+ylabel(cc1,'m yr^{-1}','fontsize',12,'fontweight','b')
+
+
+subplot(142)
+h=imagesc(xRussel(1400:2300),yRussel(1000:2000),DIV_summer_100_median(1400:2300,1000:2000)); tt=double(~isnan(DIV_summer_100_median(1400:2300,1000:2000))); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Summer','fontsize',14,'fontweight','b')
+colormap redbluecmap
+set(gca,'fontsize',12)
+
+%figure;
+subplot(143)
+h=imagesc(xRussel(1400:2300),yRussel(1000:2000),DIV_winter_100_median(1400:2300,1000:2000)); tt=double(~isnan(DIV_winter_100_median(1400:2300,1000:2000))); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Winter','fontsize',14,'fontweight','b')
+colormap redbluecmap
+cc=colorbar('location','east outside');
+ylabel(cc,'m yr^{-1}','fontsize',12,'fontweight','b')
+set(gca,'fontsize',12)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Divergente_Vel_Summer_Winter_median_Filter
+
+
+%figure('units','centimeters','position',[0 0 12 12]);
+subplot(144)
+h=imagesc(xRussel(1400:2300),yRussel(1000:2000),DIV_summer_100_median(1400:2300,1000:2000)-DIV_winter_100_median(1400:2300,1000:2000)); tt=double(~isnan(DIV_summer_100_median(1400:2300,1000:2000)-DIV_winter_100_median(1400:2300,1000:2000))); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Summer-Winter','fontsize',14,'fontweight','b')
+colormap redbluecmap
+cc=colorbar('location','east outside');
+ylabel(cc,'m yr^{-1}','fontsize',12,'fontweight','b')
+set(gca,'fontsize',12)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Divergente_Difference_Summer_minus_Winter
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Divergente_Vel_Summer_Winter_Difference_median_Filter
+
+
+%%
+
+%%% Mean
+figure('units','centimeters','position',[0 0 12 12]);
+    %set(gcf,'color','w')
+    
+ax1 = axes; hold on;
+h=pcolor(XRussel(1400:2300,1000:2000),YRussel(1400:2300,1000:2000),DIV_summer_100_median(1400:2300,1000:2000)-DIV_winter_100_median(1400:2300,1000:2000));
+shading flat;
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Summer-Winter','fontsize',14,'fontweight','b')
+colormap redbluecmap
+cc=colorbar('location','east outside');
+ylabel(cc,'m yr^{-1}','fontsize',12,'fontweight','b')
+set(gca,'fontsize',12)
+
+set(ax1,'Ydir','reverse')
+%daspect([1000 1000 1])
+
+
+ax2 = axes;
+contour(XRussel(1400:2300,1000:2000),YRussel(1400:2300,1000:2000),Vel_Russel_mean(1400:2300,1000:2000),[100,150,200,250],'color','k','linewidth',1,'ShowText','on');
+%daspect([1000 1000 1])
+set(ax2,'Ydir','reverse')
+
+axis off
+
+% Link them together
+linkaxes([ax1,ax2])
+% Hide the top axes
+ax2.Visible = 'off';
+ax2.XTick = [];
+ax2.YTick = [];
+
+xlim(ax1,[XRussel(1400,1000) XRussel(2300,2000)])
+ylim(ax1,[YRussel(1400,1000) YRussel(2300,2000)])
+
+xlim(ax2,[XRussel(1400,1000) XRussel(2300,2000)])
+ylim(ax2,[YRussel(1400,1000) YRussel(2300,2000)])
+
+
+
+
+
+% Give each one its own colormap
+colormap(ax1,'gray')
+
+CT=cbrewer('div', 'RdYlGn',90);
+colormap(ax2,flip(CT))
+
+caxis(ax1,[-30 -3.44625])
+caxis(ax2,[0 300]);
+
+xlim(ax1,[-250000 -50000])
+ylim(ax1,[-2550000 -2350000])
+
+xlim(ax2,[-250000 -50000])
+ylim(ax2,[-2550000 -2350000])
+% Then add colorbars and get everything lined up
+set([ax1,ax2],'Position',[.17 .11 .685 .815]);
+%cb1 = colorbar(ax1,'Position',[.05 .11 .0675 .815]);
+%grid(ax2,'on')
+%grid(ax1,'on')
+%title(ax1,'Mean','fontsize',14)
+
+%xlabel(cb2,'[m yr^{-1}]','fontsize',14)
+    c1 = colorbar(ax2,'south','Fontsize',8,'Fontname','Arial');
+    xlabel(c1,'[m yr^{-1}]','HorizontalAlignment','Center','position',[10 0.2])
+    set(c1,'position',[0.55 0.2 0.25 0.05])
+   % set(c1,'Xtick',[-7:1:7],'XTicklabel',{'','6','','4','','2','','0','','-2','','-4','','-6',''})
+export_fig('/nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Mean_Russel.png','-dpng','-r600');
+
+
+
+ax3=axesm('MapProjection','mercator', 'MapLatLimit',[66 68],'MapLonLimit',[-80 -20]);
+h=imagesc(ax3,xRussel, yRussel,Vel_Russel_mean); tt=double(~isnan(Vel_Russel_mean)); set(h,'AlphaData', tt*0.65);
+h=mapshow(xRussel, yRussel,double(Vel_Russel_mean));
+X = get(h,'XData'); 
+Y = get(h,'YData');
+f=isnan(Vel_Russel_mean);
+f(end+1,:)=true;
+f(:,end+1)=true;
+X(f)=nan;
+Y(f)=nan;
+set(h,'XData',X,'YData',Y);
+
+
+
+plotm(x,y)
+
+
+
+
+
+
+
+
+
+%%
+
+
+
+
+
+
+
+
+
+
+%%% DIVERGE - Mean 2016 and 2017 - 5km resolution
+
+cs_z_stack_median20x20_interp_summer= cat(3, cs_z_stack_median20x20_interp(:,:,68:71),cs_z_stack_median20x20_interp(:,:,80:83));
+cs_z_stack_median20x20_interp_winter= cat(3, cs_z_stack_median20x20_interp(:,:,72:79),cs_z_stack_median20x20_interp(:,:,84:end));
+
+VX_Russel_myr_interp_summer= cat(3, VX_Russel_myr_interp(:,:,6:9), VX_Russel_myr_interp(:,:,18:21));
+VX_Russel_myr_interp_winter= cat(3, VX_Russel_myr_interp(:,:,10:17), VY_Russel_myr_interp(:,:,21:end));
+
+VY_Russel_myr_interp_summer= cat(3, VY_Russel_myr_interp(:,:,6:9), VY_Russel_myr_interp(:,:,18:21));
+VY_Russel_myr_interp_winter= cat(3, VY_Russel_myr_interp(:,:,10:17), VY_Russel_myr_interp(:,:,21:end));
+
+
+
+DIV_summer = divergence(XRussel_5km,YRussel_5km,nanmean(cs_z_stack_median20x20_interp_summer,3).*nanmean(VX_Russel_myr_interp_summer,3),nanmean(cs_z_stack_median20x20_interp_summer,3).*nanmean(VY_Russel_myr_interp_summer,3));
+
+DIV_winter = divergence(XRussel_5km,YRussel_5km,nanmean(cs_z_stack_median20x20_interp_winter,3).*nanmean(VX_Russel_myr_interp_winter,3),nanmean(cs_z_stack_median20x20_interp_winter,3).*nanmean(VY_Russel_myr_interp_winter,3));
+
+
+figure('PaperOrientation','portrait','position',[1 1 1020 525])
+subplot(121)
+h=imagesc(xRussel_5km,yRussel_5km,DIV_summer); tt=double(~isnan(DIV_summer)); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Summer 2016','fontsize',14,'fontweight','b')
+colormap redbluecmap
+set(gca,'fontsize',12)
+
+%figure;
+subplot(122)
+h=imagesc(xRussel_5km,yRussel_5km,DIV_winter); tt=double(~isnan(DIV_winter)); set(h,'AlphaData', tt);
+%figure; imagesc(xRussel_5km,yRussel_5km,DIV_summer);
+caxis([-50 50]);
+title('Winter 2016','fontsize',14,'fontweight','b')
+colormap redbluecmap
+cc=colorbar('location','east outside');
+ylabel(cc,'m yr^{-1}','fontsize',12,'fontweight','b')
+set(gca,'fontsize',12)
+
+
+
+
+
 
 j=1;
 for i=1:25
@@ -3606,6 +4000,242 @@ ylim([0 10]);
 
 
 print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Monthly_Mean_Discharge_600m_to_900m
+
+%%
+
+figure('PaperOrientation','landscape','position',[1 1 820 825])
+
+subplot(3,1,1)
+plot(dist_600_SLine/1000, Bed_600_SLine, 'color',[0.2 0 0],'linewidth',3)
+hold on
+plot(dist_600_SLine/1000, Elev_600_SLine, 'color','blue','linewidth',3)
+title('600 m','fontsize',14,'fontweight','b')
+l=legend('Bed','Mean Elevation','location','south')
+set(l,'EdgeColor',[1 1 1])
+
+ylabel('Elevation (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+
+subplot(3,1,2)
+plot(dist_600_SLine/1000, Thick_600_SLine, 'color','blue')
+ylabel('Surface Change (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+ylim([0 1000])
+
+
+subplot(3,1,3)
+plot(dist_600_SLine/1000, Vel_summer_600_SLine, 'color','r','linewidth',3)
+hold on
+plot(dist_600_SLine/1000, Vel_winter_600_SLine, 'color','b','linewidth',3)
+xlabel('Distance along the gate [km]','fontsize',14,'fontweight','b')
+ylabel('Velocity (m/yr)','fontsize',12,'fontweight','b')
+l=legend('Summer','Winter')
+set(l,'EdgeColor',[1 1 1])
+set(gca,'fontsize',14)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Elevation_Thick_Vel_600m_Sline
+
+%700
+figure('PaperOrientation','landscape','position',[1 1 820 825])
+
+subplot(3,1,1)
+plot(dist_700_SLine/1000, Bed_700_SLine, 'color',[0.2 0 0],'linewidth',3)
+hold on
+plot(dist_700_SLine/1000, Elev_700_SLine, 'color','blue','linewidth',3)
+title('700 m','fontsize',14,'fontweight','b')
+l=legend('Bed','Mean Elevation','location','south')
+set(l,'EdgeColor',[1 1 1])
+
+ylabel('Elevation (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+
+subplot(3,1,2)
+plot(dist_700_SLine/1000, Thick_700_SLine, 'color','blue')
+ylabel('Surface Change (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+ylim([0 1000])
+
+
+subplot(3,1,3)
+plot(dist_700_SLine/1000, Vel_summer_700_SLine, 'color','r','linewidth',3)
+hold on
+plot(dist_700_SLine/1000, Vel_winter_700_SLine, 'color','b','linewidth',3)
+xlabel('Distance along the gate [km]','fontsize',14,'fontweight','b')
+ylabel('Velocity (m/yr)','fontsize',12,'fontweight','b')
+l=legend('Summer','Winter')
+set(l,'EdgeColor',[1 1 1])
+set(gca,'fontsize',14)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Elevation_Thick_Vel_700m_Sline
+
+
+%800
+figure('PaperOrientation','landscape','position',[1 1 820 825])
+
+subplot(3,1,1)
+plot(dist_800_SLine/1000, Bed_800_SLine, 'color',[0.2 0 0],'linewidth',3)
+hold on
+plot(dist_800_SLine/1000, Elev_800_SLine, 'color','blue','linewidth',3)
+title('800 m','fontsize',14,'fontweight','b')
+l=legend('Bed','Mean Elevation','location','south')
+set(l,'EdgeColor',[1 1 1])
+
+ylabel('Elevation (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+
+subplot(3,1,2)
+plot(dist_800_SLine/1000, Thick_800_SLine, 'color','blue')
+ylabel('Surface Change (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+ylim([0 1000])
+
+
+subplot(3,1,3)
+plot(dist_800_SLine/1000, Vel_summer_800_SLine, 'color','r','linewidth',3)
+hold on
+plot(dist_800_SLine/1000, Vel_winter_800_SLine, 'color','b','linewidth',3)
+xlabel('Distance along the gate [km]','fontsize',14,'fontweight','b')
+ylabel('Velocity (m/yr)','fontsize',12,'fontweight','b')
+l=legend('Summer','Winter')
+set(l,'EdgeColor',[1 1 1])
+set(gca,'fontsize',14)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Elevation_Thick_Vel_800m_Sline
+
+%900
+figure('PaperOrientation','landscape','position',[1 1 820 825])
+
+subplot(3,1,1)
+plot(dist_900_SLine/1000, Bed_900_SLine, 'color',[0.2 0 0],'linewidth',3)
+hold on
+plot(dist_900_SLine/1000, Elev_900_SLine, 'color','blue','linewidth',3)
+title('900 m','fontsize',14,'fontweight','b')
+l=legend('Bed','Mean Elevation','location','south')
+set(l,'EdgeColor',[1 1 1])
+
+ylabel('Elevation (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+
+subplot(3,1,2)
+plot(dist_900_SLine/1000, Thick_900_SLine, 'color','blue')
+ylabel('Surface Change (m)','fontsize',12,'fontweight','b')
+set(gca,'fontsize',14)
+ylim([0 1150])
+
+
+subplot(3,1,3)
+plot(dist_900_SLine/1000, Vel_summer_900_SLine, 'color','r','linewidth',3)
+hold on
+plot(dist_900_SLine/1000, Vel_winter_900_SLine, 'color','b','linewidth',3)
+xlabel('Distance along the gate [km]','fontsize',14,'fontweight','b')
+ylabel('Velocity (m/yr)','fontsize',12,'fontweight','b')
+l=legend('Summer','Winter')
+set(l,'EdgeColor',[1 1 1])
+set(gca,'fontsize',14)
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Elevation_Thick_Vel_900m_Sline
+
+
+
+%%
+
+ice_density=1000; % kg/m3
+
+figure('PaperOrientation','portrait','position',[1 1 950 825])
+subplot(321)
+plot([1:12],(Flux_600_monthly_SLine(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_600_monthly_SLine(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+ylabel('Ice discharge [km^3 s^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('600 m','fontsize',12)
+ylim([0 4]);
+
+% subplot(332)
+% plot([1:12],(Flux_650_monthly_SLine(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+% plot([1:11],(Flux_650_monthly_SLine(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+% xlim([0 13])
+% set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+% %ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+% %legend('2016','2017')
+% title('650 m','fontsize',12)
+% ylim([0 10]);
+
+subplot(322)
+plot([1:12],(Flux_700_monthly_SLine(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_700_monthly_SLine(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+title('700 m','fontsize',12)
+ylim([0 4]);
+
+% subplot(334)
+% plot([1:12],(Flux_750_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+% plot([1:11],(Flux_750_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+% xlim([0 13])
+% set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+% ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+% %legend('2016','2017')
+% title('750 m','fontsize',12)
+% ylim([0 10]);
+
+subplot(323)
+plot([1:12],(Flux_800_monthly_SLine(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_800_monthly_SLine(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+%legend('2016','2017')
+ylabel('Ice discharge [km^3 s^{-1}]','fontsize',14,'fontweight','b')
+title('800 m','fontsize',12)
+ylim([0 4]);
+
+% subplot(336)
+% plot([1:12],(Flux_850_monthly(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+% plot([1:11],(Flux_850_monthly(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+% xlim([0 13])
+% set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+% %ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+% %legend('2016','2017')
+% title('850 m','fontsize',12)
+% ylim([0 10]);
+
+subplot(324)
+plot([1:12],(Flux_900_monthly_SLine(2:13)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_900_monthly_SLine(14:end-1)/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%legend('2016','2017')
+title('900 m','fontsize',12)
+ylim([0 4]);
+
+
+Flux_monthly_mean_2016_SLine=mean([Flux_600_monthly_SLine(2:13); Flux_700_monthly_SLine(2:13);  Flux_800_monthly_SLine(2:13); Flux_900_monthly_SLine(2:13)]);
+Flux_monthly_mean_2017_SLine=mean([Flux_600_monthly_SLine(14:end-1); Flux_700_monthly_SLine(14:end-1); Flux_800_monthly_SLine(14:end-1); Flux_900_monthly_SLine(14:end-1)]); 
+
+subplot(3,2,5:6)
+plot([1:12],(Flux_monthly_mean_2016_SLine/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); hold on
+plot([1:11],(Flux_monthly_mean_2017_SLine/1e+12)*(ice_density),'linestyle','-','linewidth',2, 'marker','.','markersize',15); 
+xlim([0 13])
+set(gca,'XTick',[1:12],'xticklabel',['J';'F';'M';'A';'M';'J';'J';'A';'S';'O';'N';'D'],'fontsize',14)
+%ylabel('Ice discharge [Gt yr^{-1}]','fontsize',14,'fontweight','b')
+legend('2016','2017')
+title('Mean','fontsize',12)
+ylim([0 4]);
+ylabel('Ice discharge [km^3 s^{-1}]','fontsize',14,'fontweight','b')
+
+
+
+print -djpeg -r600 /nfs/a59/eeagdl/Data/Available_Images/GRIS_Mosaic_test/Russel_Glacier/Monthly_Mean_Discharge_600m_to_900m_Sline
+
+
+
+%%
+
+
 
 
 % get fluxes in velocities summer and winter

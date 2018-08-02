@@ -17,7 +17,7 @@ git commit -m 'changes on 28_03_2018'
 #add a comment:
 
 git commit -a
-
+#to finish   :wq
 
 #upload:
 git remote add origin https://github.com/adrianoglemos/Rotinas.git
