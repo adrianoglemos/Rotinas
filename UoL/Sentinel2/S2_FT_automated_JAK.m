@@ -25,58 +25,62 @@ for i=1:(size(data,1)-1)
    temp2=char(data{i+1,1});
     date2=temp2(10:17);
     
+    date1='20170711';
+    date2='20170721'
     spanning=datenum(date2,'yyyymmdd')-datenum(date1,'yyyymmdd');
     
-    eval(['!mkdir /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/'])
+    ['mkdir /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/']
     
-    eval(['!cp ./*' date1 '* /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/'])
-    eval(['!cp ./*' date2 '* /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/'])
+    ['cp ./*' date1 '* /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/']
+    ['cp ./*' date2 '* /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/']
 
-    eval(['cd /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/'])
+    ['cd /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/processing/' date1 '_' date2 '/']
 
     !app setup gamma/20170706
-    eval(['!par_data_geo *' date1 '*.jp2 ' date1 '.dem.par ' date1 '.geo'])
+    ['par_data_geo *' date1 '*.jp2 ' date1 '.dem.par ' date1 '.geo']
     pause(5)
-    eval(['!par_data_geo *' date2 '*.jp2 ' date2 '.dem.par ' date2 '.geo'])
+    ['par_data_geo *' date2 '*.jp2 ' date2 '.dem.par ' date2 '.geo']
 
-    eval(['!create_diff_par ' date1 '.dem.par ' date2 '.dem.par ' date1 '_' date2 '.off 2 0']);
+    ['create_diff_par ' date1 '.dem.par ' date2 '.dem.par ' date1 '_' date2 '.off 2 0']
 
-    eval(['!init_offsetm ' date1 '.geo ' date2 '.geo ' date1 '_' date2 '.off - - - - - - 0.01 128']);%256 64 - 1 64 64 7.0 4 0 0
+    ['init_offsetm ' date1 '.geo ' date2 '.geo ' date1 '_' date2 '.off - - - - - - 0.01 256']%128 64 - 1 64 64 7.0 4 0 0
 
-    eval(['!offset_pwrm ' date1 '.geo ' date2 '.geo ' date1 '_' date2 '.off ' date1 '_' date2 '_offs ' date1 '_' date2 '_ccp 32 32 ' date1 '_' date2 '_offsets 2 6 6 0.01 - - - ' date1 '_' date2 '_ccp']);
+    ['offset_pwrm ' date1 '.geo ' date2 '.geo ' date1 '_' date2 '.off ' date1 '_' date2 '_offs ' date1 '_' date2 '_ccp 32 32 ' date1 '_' date2 '_offsets 2 6 6 0.01 - - - - ' date1 '_' date2 '_ccp']
 
-    eval(['!offset_fitm ' date1 '_' date2 '_offs ' date1 '_' date2 '_ccp ' date1 '_' date2 '.off ' date1 '_' date2 '_coffs ' date1 '_' date2 '_coffsets 0.01']);
+    ['offset_fitm ' date1 '_' date2 '_offs ' date1 '_' date2 '_ccp ' date1 '_' date2 '.off ' date1 '_' date2 '_coffs ' date1 '_' date2 '_coffsets 0.01']
     
     % tracking
-    eval(['!offset_pwr_trackingm ' date1 '.geo ' date2 '.geo ' date1 '_' date2 '.off ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_ccp2 72 72 ' date1 '_' date2 '_offsets2 2 0.01 10 10 - - - - - - - ' date1 '_' date2 '_ccs2']);
+   ['offset_pwr_trackingm ' date1 '.geo ' date2 '.geo ' date1 '_' date2 '.off ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_ccp2 72 72 ' date1 '_' date2 '_offsets2 2 0.01 10 10 - - - - - - - - ' date1 '_' date2 '_ccs2']
 
-    eval(['!reallks ' date1 '.geo master_' date1 '_' date2 '.geo 10980 10 10']);
+    ['reallks ' date1 '.geo master_' date1 '_' date2 '.geo 10980 10 10']
 
-eval(['!cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_real 1098 0']);
-eval(['!cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_imaginary 1098 1']);
-eval(['!cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_magnitude 1098 3']);
-eval(['!cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_phase 1098 4']);
+['cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_real 1098 0']
+['cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_imaginary 1098 1']
+['cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_magnitude 1098 3']
+['cpx_to_real ' date1 '_' date2 '_offs2 ' date1 '_' date2 '_phase 1098 4']
 
 
-eval(['!rasdt_pwr24 ' date1 '_' date2 '_real master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_ground_range.bmp']);
-eval(['!rasdt_pwr24 ' date1 '_' date2 '_imaginary master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_azimuth.bmp']);
-eval(['!rasdt_pwr24 ' date1 '_' date2 '_magnitude master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_velocity.bmp']);
-eval(['!rasdt_pwr24 ' date1 '_' date2 '_phase master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_angle.bmp']);
+['rasdt_pwr24 ' date1 '_' date2 '_real master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_ground_range.bmp']
+['rasdt_pwr24 ' date1 '_' date2 '_imaginary master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_azimuth.bmp']
+['rasdt_pwr24 ' date1 '_' date2 '_magnitude master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_velocity.bmp']
+['rasdt_pwr24 ' date1 '_' date2 '_phase master_' date1 '_' date2 '.geo 1098 1 1 0 1 1 55. 1. .35 1 ' date1 '_' date2 '_angle.bmp']
 
 ground_cor= [date1 '_' date2 '_real']; 
 azimuth_cor= [date1 '_' date2 '_imaginary']; 
 
-eval(['!float_math ' ground_cor ' - Multi_gro 1098 2 - - - - 10']);
-eval(['!float_math ' azimuth_cor ' - Multi_az 1098 2 - - - - 10']);
+['float_math ' ground_cor ' - Multi_gro 1098 2 - - - - 10']
+['float_math ' azimuth_cor ' - Multi_az 1098 2 - - - - 10']
 
-eval(['!float_math Multi_gro Multi_gro Multi_gro2 1098 2']);
-eval(['!float_math Multi_az Multi_az Multi_az2 1098 2']);
-eval(['!float_math Multi_gro2 Multi_az2 Sum 1098 0']);
-eval(['!float_math Sum - squRo 1098 6']);
-eval(['!float_math squRo - VELOCITY_m_day 1098 3 - - - - ' num2str(spanning)]) % days apart
-eval(['!float_math VELOCITY_m_day - VEL_m_y_' date1 '_' date2 ' 1098 2 - - - - 365']);
+['float_math Multi_gro Multi_gro Multi_gro2 1098 2']
+['float_math Multi_az Multi_az Multi_az2 1098 2']
+['float_math Multi_gro2 Multi_az2 Sum 1098 0']
+['float_math Sum - squRo 1098 6']
+['float_math squRo - VELOCITY_m_day 1098 3 - - - - ' num2str(spanning)] % days apart
+['float_math VELOCITY_m_day - VEL_m_y_' date1 '_' date2 ' 1098 2 - - - - 365']
 
-eval(['!cp ./' date1 '.dem.par ./master.dem.par']);
+eval(['!cp ./' date1 '.dem.par ./master.dem.par'])
+
+['float_math ' date1 '_' date2 '_ccp2 ' date1 '_' date2 '_ccs2 ' date1 '_' date2 '_SNR 1098 3']
 
 !sed -i '7s/10980/1098/' master.dem.par
 !sed -i '8s/10980/1098/' master.dem.par
@@ -87,13 +91,15 @@ eval(['!cp ./' date1 '.dem.par ./master.dem.par']);
 
 
 
-eval(['!app setup canopy python-libs && /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/Filters/gaussian_filter.py VEL_m_y_' date1 '_' date2 ' float32 1098 1098 VEL_m_y_' date1 '_' date2 '_Fil -w 10 -fmax 0.3']);
-eval(['!app setup canopy python-libs && /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/Filters/dust_filter.py VEL_m_y_' date1 '_' date2 '_Fil float32 1098 1098 VEL_m_y_' date1 '_' date2 '_DuFil']);
-eval(['!data2geotiff master.dem.par VEL_m_y_' date1 '_' date2 '_DuFil 2 VEL_m_y_' date1 '_' date2 '_DuFil.tif']);
+['app setup canopy python-libs && /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/Filters/gaussian_filter.py VEL_m_y_' date1 '_' date2 ' float32 1098 1098 VEL_m_y_' date1 '_' date2 '_Fil -w 10 -fmax 0.3']
+['app setup canopy python-libs && /nfs/a59/eeagdl/Data/Available_Images/S2/JAK/Filters/dust_filter.py VEL_m_y_' date1 '_' date2 '_Fil float32 1098 1098 VEL_m_y_' date1 '_' date2 '_DuFil']
+['data2geotiff master.dem.par VEL_m_y_' date1 '_' date2 '_DuFil 2 VEL_m_y_' date1 '_' date2 '_DuFil.tif']
 
-eval(['!data2geotiff master.dem.par VEL_m_y_' date1 '_' date2 ' 2 VEL_m_y_' date1 '_' date2 '.tif']);
-eval(['!data2geotiff master.dem.par master_' date1 '_' date2 '.geo 2 master_' date1 '_' date2 '.tif']);
-    
+['data2geotiff master.dem.par VEL_m_y_' date1 '_' date2 ' 2 VEL_m_y_' date1 '_' date2 '.tif']
+['data2geotiff master.dem.par master_' date1 '_' date2 '.geo 2 master_' date1 '_' date2 '.tif']
+
+['data2geotiff master.dem.par ' date1 '_' date2 '_SNR 2 SNR_' date1 '_' date2 '.tif']
+
 end
 
 
